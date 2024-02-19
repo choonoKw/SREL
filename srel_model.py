@@ -18,7 +18,7 @@ class SREL(nn.Module):
             nn.Linear(256, 128)  # Output size matches L
         )
 
-    def forward(self, phi_initial, G, H):
+    def forward(self, phi_initial, G_M, H_M):
         phi = phi_initial
         for _ in range(10):  # Iterative update steps
             s = self.compute_s(phi)
