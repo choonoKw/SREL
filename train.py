@@ -1,17 +1,19 @@
 import torch
 import torch.optim as optim
-from complex_valued_dataset import ComplexValuedDataset
+from utils.complex_valued_dataset import ComplexValuedDataset
+from utils.load_scalars_from_setup import load_scalars_from_setup
 from srel_model import SREL
 from torch.utils.data import DataLoader
 
 def main():
     # Load dataset
-    dataset = ComplexValuedDataset('/storage/work/jbk5816/MATLAB/SINR max/SREL/240202_mkTrainingData/data_trd1.mat')
+    Nt, N, Nr, M, Lj = load_scalars_from_setup('data/data_setup.mat')
+    dataset = ComplexValuedDataset('data/data_trd_1e1.mat')
     data_loader = DataLoader(dataset, batch_size=1, shuffle=True)
 
     # Initialize model
     model = SREL()
-    num_epochs = 100
+    num_epochs = 1
     # Initialize the optimizer
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
