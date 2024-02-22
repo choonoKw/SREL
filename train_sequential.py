@@ -7,8 +7,8 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
 from model.srel_model import SREL
 
-from utils.custom_loss import custom_loss_function
-from utils.worst_sinr_db import worst_sinr_db_function
+from utils.custom_loss import sum_of_reciprocal
+from utils.worst_sinr import worst_sinr_function
 
 from visualization.plotting import plot_training_loss
 
@@ -47,14 +47,14 @@ def main():
             # s = torch.exp
             
             s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
-            loss = custom_loss_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+            loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
         
             loss.backward()
             optimizer.step()
             
             total_loss += loss.item()  # Accumulate the batch loss
             
-            total_worst_sinr += worst_sinr_db_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+            total_worst_sinr += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
             
         average_loss = total_loss / len(data_loader)  # Compute average loss for the epoch
         

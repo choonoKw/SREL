@@ -16,7 +16,7 @@ from utils.load_mapVector import load_mapVector
 from model.srel_model import SREL
 
 from utils.custom_loss import sum_of_reciprocal
-from utils.worst_sinr_db import worst_sinr_db_function
+from utils.worst_sinr import worst_sinr_function
 
 from visualization.plotting import plot_losses
 
@@ -93,7 +93,7 @@ def main():
                 val_loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
                 total_val_loss += val_loss.item()
                 
-                sum_of_worst_sinr += worst_sinr_db_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                sum_of_worst_sinr += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
         validation_losses.append(total_val_loss / len(test_loader))
         
         average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr/ len(test_loader))  # Compute average loss for the epoch
