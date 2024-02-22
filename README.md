@@ -10,8 +10,9 @@ project_name/
 │   └── srel_model.py       # SREL model definition
 │
 ├── utils/                  # Utility functions and classes
-│   ├── dataset.py          # Dataset class definitions, e.g., ComplexValuedDataset
-│   └── metrics.py          # Evaluation metrics and other utility functions
+│   ├── load_scalars_from_setup.py  # Function to load scalar values from setup file
+│   ├── complex_valued_dataset.py   # ComplexValuedDataset class for handling dataset
+│   └── custom_loss.py           # Custom loss function definitions
 │
 ├── configs/                # Configuration files or scripts
 │   └── model_config.py     # Model configuration settings
