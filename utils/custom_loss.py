@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Feb 22 23:36:00 2024
+Created on Fri Feb 23 15:56:07 2024
 
 @author: jbk5816
 """
@@ -64,7 +64,7 @@ def regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch):
     # Average the loss over the batch
     return total_loss / batch_size
 
-def custom_loss_function(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch, lambda_eta):
+def custom_loss_function(constants, G_M_batch, H_M_batch, lambda_eta, model_outputs):
     primary_loss = sum_of_reciprocal(constants, s_batch, G_M_batch, H_M_batch)
     # Compute the regularization loss
     regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
