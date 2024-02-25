@@ -19,7 +19,8 @@ def plot_training_loss(epoch_losses):
     plt.show()
     
 def plot_losses(training_losses, validation_losses):
-    plt.figure(figsize=(10, 6))
+    plt.figure('Loss Plot', figsize=(10, 6))
+    plt.clf()  # Clear the current figure
     plt.plot(training_losses, label='Training Loss')
     plt.plot(validation_losses, label='Validation Loss')
     plt.xlabel('Epoch')
