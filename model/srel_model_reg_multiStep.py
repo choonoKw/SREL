@@ -23,25 +23,30 @@ class SREL(nn.Module):
             
         self.est_rho_module1 = \
             Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Lv'], 1)
+            
+        self.N_step = constants['N_step']
+        self.modulus = constants['modulus']
         
     def forward(self, phi_batch, w_M_batch, v_M):
         batch_size = phi_batch.size(0)
-        N_step = 10
+        N_step = self.N_step
+        modulus = self.modulus
         
         # Initialize the list
-        s_list_batch = torch.zeros(batch_size, self.Ls, N_step+1)
-        eta_M_list_batch = torch.zeros(batch_size, self.Ls, self.M) 
+        s_list_batch = torch.zeros(batch_size, self.Ls, N_step+1, dtype=torch.complex64)
+        eta_M_list_batch = torch.zeros(batch_size, self.Ls, self.M, N_step) 
         
         for i in range(batch_size):
             phi = phi_batch[i]
             w_M = w_M_batch[i]
             
             # s_list = torch.zeros(self.Ls, N_step+1)
-            eta_M_list = torch.zeros(self.Ls, N_step)
+            # eta_M_list = torch.zeros(self.Ls, N_step)
             
             # Repeat the update process 10 times
             for update_step in range(N_step):
-                s = self.compute_s(phi)
+                # s = self.compute_s(phi)
+                s = modulus*torch.exp(1j *phi)
                 eta_M = torch.zeros(self.Ls, self.M)
                 rho_M = torch.zeros(self.M)  # Ensure correct broadcasting shape
                 
@@ -58,16 +63,20 @@ class SREL(nn.Module):
                 s_list_batch[i,:,update_step] = s
                 eta_M_list_batch[i,:,:,update_step] = eta_M
             
-            s_list_batch[i,:,N_step] = self.compute_s(phi)  # Saving the final s after all updates
+            s_list_batch[i,:,N_step] = modulus*torch.exp(1j *phi)  # Saving the final s after all updates
             
-            model_outputs = {
-                's_list_batch': s_list_batch,
-                'eta_M_list_batch': eta_M_list_batch
-            }
+        model_outputs = {
+            's_list_batch': s_list_batch,
+            'eta_M_list_batch': eta_M_list_batch
+        }
             
+        # return {
+        #     's_list_batch': s_list_batch,
+        #     'eta_M_list_batch': eta_M_list_batch
+        # }
         return model_outputs
 
-    def compute_s(self, phi):
-        magnitude = 1 / torch.sqrt(torch.tensor(self.Ls, dtype=torch.float))  # NtN = Ls = 128
-        s = magnitude * torch.exp(1j * phi)
-        return s
+    # def compute_s(self, phi):
+    #     magnitude = 1 / torch.sqrt(torch.tensor(self.Ls, dtype=torch.float))  # NtN = Ls = 128
+    #     s = magnitude * torch.exp(1j * phi)
+    #     return s
