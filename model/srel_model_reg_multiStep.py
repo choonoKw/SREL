@@ -27,6 +27,8 @@ class SREL(nn.Module):
         self.N_step = constants['N_step']
         self.modulus = constants['modulus']
         
+        self.device = torch.device("cpu")  # Default to CPU, will be updated later
+        
     def forward(self, phi_batch, w_M_batch, v_M):
         batch_size = phi_batch.size(0)
         N_step = self.N_step
@@ -57,6 +59,7 @@ class SREL(nn.Module):
                 
                 # Element-wise multiplication and sum across the M dimension
                 eta = torch.sum(eta_M * rho_M, dim=1)
+                eta = eta.to(self.device)
                 phi = phi - eta  # Update phi
                 
                 # save on list
