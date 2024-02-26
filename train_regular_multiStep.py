@@ -13,9 +13,9 @@ from torch.utils.data import DataLoader, Subset
 from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
-from model.srel_model_reg_1step import SREL
+from model.srel_model_reg_multiStep import SREL
 
-from utils.custom_loss import sum_of_reciprocal, regularizer_eta
+from utils.custom_loss import custom_loss_function
 from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
@@ -25,7 +25,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     v_M, Lv = load_mapVector('data/data_mapV.mat')
-    dataset = ComplexValuedDataset('data/data_trd_1e2.mat')
+    dataset = ComplexValuedDataset('data/data_trd_1e1.mat')
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -45,8 +45,9 @@ def main():
     N = constants['N']
     modulus = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
 
+    ###############################################################
     # Initialize model
-    constants['N_Step'] = 2
+    constants['N_step'] = 10
     model = SREL(constants)
     num_epochs = 10
     # Initialize the optimizer
@@ -54,18 +55,20 @@ def main():
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 0.001,
-        'lambda_f': 0.01,
+        'lambda_eta': 1e-7,
+        'lambda_sinr': 1e-3,
     }
-    lambda_eta = hyperparameters['lambda_eta']
+    
+    # prepare to write logs for tensorboard
+    writer = SummaryWriter('runs/SREL_multiStep1')
+    global_step = 0
+    ###############################################################
     
     # List to store average loss per epoch
     training_losses = []
     validation_losses = []
     
-    # prepare to write logs for tensorboard
-    writer = SummaryWriter('runs/SREL_singleStep')
-    global_step = 0
+    
 
     # Training loop
     for epoch in range(num_epochs):
@@ -73,20 +76,20 @@ def main():
         total_train_loss = 0.0
         
         
-        for batch_idx, (phi_batch, w_M_batch, G_M_batch, H_M_batch)  in enumerate(train_loader):
+        for phi_batch, w_M_batch, G_M_batch, H_M_batch in train_loader:
             # Perform training steps
             # for m in range(1,constants['M']+1):
             optimizer.zero_grad()
-            s_batch = modulus * torch.exp(1j * phi_batch)
+            # s_batch = modulus * torch.exp(1j * phi_batch)
             
-            phi_optimal_batch, eta_M_batch = model(phi_batch, w_M_batch, v_M)
-            s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
+            model_outputs = model(phi_batch, w_M_batch, v_M)
+            # s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
             
             # calculate loss
-            primary_loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
-            regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
+            # primary_loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
+            # regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
             
-            loss = primary_loss + lambda_eta * regularization_loss
+            loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
         
             loss.backward()
             optimizer.step()
@@ -96,6 +99,7 @@ def main():
             
             global_step += 1
             # tensorboard --logdir=runs
+            # 
             
         # Compute average loss for the epoch
         average_train_loss = total_train_loss / len(train_loader)
@@ -117,19 +121,22 @@ def main():
         
         with torch.no_grad():  # Disable gradient computation
             for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
-                s_batch = modulus * torch.exp(1j * phi_batch)
+                # s_batch = modulus * torch.exp(1j * phi_batch)
                 
-                phi_optimal_batch, eta_M_batch = model(phi_batch, w_M_batch, v_M)
-                s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
+                # phi_optimal_batch, eta_M_batch = model(phi_batch, w_M_batch, v_M)
+                # s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
+                model_outputs = model(phi_batch, w_M_batch, v_M)
                 
                 # calculate loss
-                primary_loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
-                regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
+                # primary_loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                # regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
+                # val_loss = primary_loss + lambda_eta * regularization_loss
                 
-                val_loss = primary_loss + lambda_eta * regularization_loss
+                val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
                 total_val_loss += val_loss.item()
                 
-                sum_of_worst_sinr += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                s_list_batch = model_outputs['s_list_batch']
+                sum_of_worst_sinr += worst_sinr_function(constants, s_list_batch[:,:,-1], G_M_batch, H_M_batch)
         # validation_losses.append(total_val_loss / len(test_loader))
         
         
