@@ -50,7 +50,7 @@ def main():
 
     ###############################################################
     # Initialize model
-    N_step = 4
+    N_step = 10
     constants['N_step'] = N_step
     model = SREL(constants)
     num_epochs = 10
@@ -72,8 +72,10 @@ def main():
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cpu")
     print(f"Using device: {device}")
     model.to(device)
+    model.device = device
     
     # List to store average loss per epoch
     training_losses = []
@@ -88,6 +90,12 @@ def main():
         
         
         for phi_batch, w_M_batch, G_M_batch, H_M_batch in train_loader:
+            # if torch.cuda.is_available():
+            phi_batch = phi_batch.to(device)
+            G_M_batch = G_M_batch.to(device)
+            H_M_batch = H_M_batch.to(device)
+            w_M_batch = w_M_batch.to(device)
+            v_M = v_M.to(device)  # If v_M is a tensor that requires to be on the GPU
             # Perform training steps
             # for m in range(1,constants['M']+1):
             optimizer.zero_grad()
@@ -131,6 +139,11 @@ def main():
         with torch.no_grad():  # Disable gradient computation
             for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
                 # s_batch = modulus * torch.exp(1j * phi_batch)
+                phi_batch = phi_batch.to(device)
+                G_M_batch = G_M_batch.to(device)
+                H_M_batch = H_M_batch.to(device)
+                w_M_batch = w_M_batch.to(device)
+                v_M = v_M.to(device)  # If v_M is a tensor that requires to be on the GPU
                 
                 # phi_optimal_batch, eta_M_batch = model(phi_batch, w_M_batch, v_M)
                 # s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
@@ -144,7 +157,7 @@ def main():
                 val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
                 total_val_loss += val_loss.item()
                 
-                s_list_batch = model_outputs['s_list_batch']
+                s_list_batch = model_outputs['s_list_batch'].to(device)
                 sum_of_worst_sinr += worst_sinr_function(constants, s_list_batch[:,:,-1], G_M_batch, H_M_batch)
         # validation_losses.append(total_val_loss / len(test_loader))
         
@@ -174,7 +187,7 @@ def main():
     # After completing all epochs, plot the training loss
     plot_losses(training_losses, validation_losses)
     
-    torch.save(model.state_dict(), 'weights/model_weights.pth')
+    torch.save(model.state_dict(), f'weights/Nstep{N_step:02d}_data{data_num}/model_weights.pth')
     
 if __name__ == "__main__":
     main()

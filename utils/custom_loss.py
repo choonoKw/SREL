@@ -11,12 +11,13 @@ def sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_batch):
     batch_size = s_batch.size(0)
     M = constants['M']
     total_loss = 0.0
+    device = s_batch.device
 
     # Process each item in the batch
     for batch_idx in range(batch_size):
-        s_optimal = s_batch[batch_idx]
-        G_M = G_M_batch[batch_idx]
-        H_M = H_M_batch[batch_idx]
+        s_optimal = s_batch[batch_idx].to(device)
+        G_M = G_M_batch[batch_idx].to(device)
+        H_M = H_M_batch[batch_idx].to(device)
         
         f = 0.0
         for m in range(M):
@@ -34,19 +35,20 @@ def regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch):
     batch_size = s_batch.size(0)
     M = constants['M']
     total_loss = 0.0
+    device = s_batch.device
 
     # Process each item in the batch
     for batch_idx in range(batch_size):
-        s = s_batch[batch_idx]
+        s = s_batch[batch_idx].to(device)
         G_M = G_M_batch[batch_idx]
         H_M = H_M_batch[batch_idx]
         eta_M = eta_M_batch[batch_idx]
         
         f = 0.0
         for m in range(M):
-            G = G_M[:, :, m]
-            H = H_M[:, :, m]
-            eta = eta_M[:,m]
+            G = G_M[:, :, m].to(device)
+            H = H_M[:, :, m].to(device)
+            eta = eta_M[:,m].to(device)
             
             # Using torch.vdot for complex dot products where one operand is conjugated
             sGs = torch.vdot(s, torch.matmul(G, s))  # Equivalent to s'*G*s in MATLAB
@@ -65,6 +67,7 @@ def regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch):
     return total_loss / batch_size
 
 def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
+    
     N_step = constants['N_step']
     s_list_batch = model_outputs['s_list_batch']
     eta_M_list_batch = model_outputs['eta_M_list_batch']
