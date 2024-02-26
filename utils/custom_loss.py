@@ -7,7 +7,7 @@ Created on Fri Feb 23 15:56:07 2024
 
 import torch
 
-def sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch):
+def sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_optimal_batch):
     batch_size = s_optimal_batch.size(0)
     M = constants['M']
     total_loss = 0.0
@@ -30,7 +30,7 @@ def sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch):
     # Average the loss over the batch
     return total_loss / batch_size
 
-def regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch):
+def regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch):
     batch_size = s_batch.size(0)
     M = constants['M']
     total_loss = 0.0
@@ -64,8 +64,18 @@ def regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch):
     # Average the loss over the batch
     return total_loss / batch_size
 
-def custom_loss_function(constants, G_M_batch, H_M_batch, lambda_eta, model_outputs):
-    primary_loss = sum_of_reciprocal(constants, s_batch, G_M_batch, H_M_batch)
+def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
+    N_step = constants['N_step']
+    
+    f_sinr = 0.0
+    f_eta = 0.0
+    
+    
+    for n range(N_step):
+        f_sinr += sum_of_reciprocal(constants, G_M_batch, H_M_batch, model_outputs):
+        f_eta +=  
+            
+            
     # Compute the regularization loss
     regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
     # Combine the losses
