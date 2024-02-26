@@ -27,7 +27,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     v_M, Lv = load_mapVector('data/data_mapV.mat')
-    dataset = ComplexValuedDataset('data/data_trd_1e1.mat')
+    dataset = ComplexValuedDataset('data/data_trd_1e2.mat')
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -49,7 +49,7 @@ def main():
 
     ###############################################################
     # Initialize model
-    constants['N_step'] = 5
+    constants['N_step'] = 7
     model = SREL(constants)
     num_epochs = 10
     # Initialize the optimizer
@@ -62,9 +62,16 @@ def main():
     }
     
     # prepare to write logs for tensorboard
-    writer = SummaryWriter('runs/SREL_multiStep5')
+    writer = SummaryWriter('runs/SREL_multiStep7')
     global_step = 0
+    
+    # tensorboard --logdir=runs --reload_interval 5
     ###############################################################
+    
+    # Check for GPU availability
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    model.to(device)
     
     # List to store average loss per epoch
     training_losses = []
@@ -100,8 +107,6 @@ def main():
             
             
             global_step += 1
-            # tensorboard --logdir=runs
-            # 
             
         # Compute average loss for the epoch
         average_train_loss = total_train_loss / len(train_loader)
