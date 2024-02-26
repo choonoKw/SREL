@@ -7,16 +7,16 @@ Created on Fri Feb 23 15:56:07 2024
 
 import torch
 
-def sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_optimal_batch):
-    batch_size = s_optimal_batch.size(0)
+def sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_batch):
+    batch_size = s_batch.size(0)
     M = constants['M']
     total_loss = 0.0
 
     # Process each item in the batch
-    for i in range(batch_size):
-        s_optimal = s_optimal_batch[i]
-        G_M = G_M_batch[i]
-        H_M = H_M_batch[i]
+    for batch_idx in range(batch_size):
+        s_optimal = s_batch[batch_idx]
+        G_M = G_M_batch[batch_idx]
+        H_M = H_M_batch[batch_idx]
         
         f = 0.0
         for m in range(M):
@@ -36,11 +36,11 @@ def regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch):
     total_loss = 0.0
 
     # Process each item in the batch
-    for i in range(batch_size):
-        s = s_batch[i]
-        G_M = G_M_batch[i]
-        H_M = H_M_batch[i]
-        eta_M = eta_M_batch[i]
+    for batch_idx in range(batch_size):
+        s = s_batch[batch_idx]
+        G_M = G_M_batch[batch_idx]
+        H_M = H_M_batch[batch_idx]
+        eta_M = eta_M_batch[batch_idx]
         
         f = 0.0
         for m in range(M):
@@ -66,19 +66,30 @@ def regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch):
 
 def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
     N_step = constants['N_step']
+    s_list_batch = model_outputs['s_list_batch']
+    eta_M_list_batch = model_outputs['eta_M_list_batch']
+    
+    s_batch = s_list_batch[:,:,0]
+    eta_M_batch = eta_M_list_batch[:,:,:,0]
     
     f_sinr = 0.0
-    f_eta = 0.0
+    f_eta = regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch)
     
-    
-    for n range(N_step):
-        f_sinr += sum_of_reciprocal(constants, G_M_batch, H_M_batch, model_outputs):
-        f_eta +=  
-            
+    for n in range(N_step-1):
+        s_batch = s_list_batch[:,:,n+1].squeeze()
+        eta_M_batch = eta_M_list_batch[:,:,:,n+1].squeeze()
+        
+        f_eta += regularizer_eta(constants, G_M_batch, H_M_batch, s_batch, eta_M_batch)
+        
+        f_sinr += sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_batch)
+        
+    s_batch = s_list_batch[:,:,-1]
+    f_sinr_opt = sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_batch)
             
     # Compute the regularization loss
-    regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
+    # regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
     # Combine the losses
-    loss = primary_loss + lambda_eta * regularization_loss
+    
+    loss = f_sinr_opt + hyperparameters['lambda_sinr']*f_sinr/(N_step-1) + hyperparameters['lambda_eta']*f_eta/N_step
     
     return loss
