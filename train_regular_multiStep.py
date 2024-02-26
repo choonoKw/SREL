@@ -25,7 +25,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     v_M, Lv = load_mapVector('data/data_mapV.mat')
-    dataset = ComplexValuedDataset('data/data_trd_1e1.mat')
+    dataset = ComplexValuedDataset('data/data_trd_1e2.mat')
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -39,24 +39,33 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
     
-    # defining constant
-    constants["Lv"] = Lv
+    # loading constant
+    constants['Lv'] = Lv
     Nt = constants['Nt']
     N = constants['N']
     modulus = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
 
     # Initialize model
+    constants['N_Step'] = 2
     model = SREL(constants)
     num_epochs = 10
     # Initialize the optimizer
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    lambda_eta = 0.0001
+    
+    # loss setting
+    hyperparameters = {
+        'lambda_eta': 0.001,
+        'lambda_f': 0.01,
+    }
+    lambda_eta = hyperparameters['lambda_eta']
     
     # List to store average loss per epoch
     training_losses = []
     validation_losses = []
     
-    writer = SummaryWriter('runs/your_experiment_name')
+    # prepare to write logs for tensorboard
+    writer = SummaryWriter('runs/SREL_singleStep')
+    global_step = 0
 
     # Training loop
     for epoch in range(num_epochs):
@@ -84,13 +93,20 @@ def main():
             
             total_train_loss += loss.item()
             
-            # Log the loss
-            writer.add_scalar('Training loss', loss, epoch * len(train_loader) + batch_idx)
-        
+            
+            global_step += 1
+            # tensorboard --logdir=runs
             
         # Compute average loss for the epoch
         average_train_loss = total_train_loss / len(train_loader)
+        
+        # Log the loss
+        writer.add_scalar('Loss/Training', average_train_loss, epoch)
+        writer.flush()
+        
         training_losses.append(average_train_loss)
+        
+        
         
         
         # Validation phase
