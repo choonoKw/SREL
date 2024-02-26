@@ -43,11 +43,11 @@ def main():
     constants['Lv'] = Lv
     Nt = constants['Nt']
     N = constants['N']
-    modulus = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
+    constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
 
     ###############################################################
     # Initialize model
-    constants['N_step'] = 10
+    constants['N_step'] = 5
     model = SREL(constants)
     num_epochs = 10
     # Initialize the optimizer
@@ -60,7 +60,7 @@ def main():
     }
     
     # prepare to write logs for tensorboard
-    writer = SummaryWriter('runs/SREL_multiStep1')
+    writer = SummaryWriter('runs/SREL_multiStep5')
     global_step = 0
     ###############################################################
     
