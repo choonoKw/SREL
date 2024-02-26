@@ -153,6 +153,8 @@ def main():
     # After completing all epochs, plot the training loss
     plot_losses(training_losses, validation_losses)
     
+    torch.save(model.state_dict(), 'weights/model_weights.pth')
+    
 if __name__ == "__main__":
     main()
 
