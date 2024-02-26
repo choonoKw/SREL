@@ -21,6 +21,8 @@ from utils.worst_sinr import worst_sinr_function
 from torch.utils.tensorboard import SummaryWriter #tensorboard
 from visualization.plotting import plot_losses # result plot
 
+import time
+
 def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
@@ -69,7 +71,7 @@ def main():
     validation_losses = []
     
     
-
+    start_time = time.time()
     # Training loop
     for epoch in range(num_epochs):
         model.train()  # Set model to training mode
@@ -149,6 +151,14 @@ def main():
         print(f'Epoch [{epoch+1}/{num_epochs}], '
               # f'Train Loss = {average_train_loss:.4f}, '
               f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
+        
+    # End time
+    end_time = time.time()
+    
+    # Calculate the duration
+    duration = end_time - start_time
+    
+    print(f"Training completed in: {duration:.2f} seconds")
         
     # After completing all epochs, plot the training loss
     plot_losses(training_losses, validation_losses)
