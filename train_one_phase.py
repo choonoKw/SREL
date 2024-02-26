@@ -27,7 +27,8 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     v_M, Lv = load_mapVector('data/data_mapV.mat')
-    dataset = ComplexValuedDataset('data/data_trd_1e2.mat')
+    data_num = '1e1'
+    dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -49,7 +50,8 @@ def main():
 
     ###############################################################
     # Initialize model
-    constants['N_step'] = 7
+    N_step = 4
+    constants['N_step'] = N_step
     model = SREL(constants)
     num_epochs = 10
     # Initialize the optimizer
@@ -62,7 +64,7 @@ def main():
     }
     
     # prepare to write logs for tensorboard
-    writer = SummaryWriter('runs/SREL_multiStep7')
+    writer = SummaryWriter(f'runs/SREL_multiStep{N_step:02d}_{data_num}')
     global_step = 0
     
     # tensorboard --logdir=runs --reload_interval 5
@@ -113,7 +115,7 @@ def main():
         
         # Log the loss
         writer.add_scalar('Loss/Training', average_train_loss, epoch)
-        writer.flush()
+        # writer.flush()
         
         training_losses.append(average_train_loss)
         
@@ -151,6 +153,10 @@ def main():
         # Store the average loss for this epoch
         average_val_loss = total_val_loss / len(test_loader)
         validation_losses.append(average_val_loss)
+        
+        # Log the loss
+        writer.add_scalar('Loss/Testing', average_val_loss, epoch)
+        writer.flush()
         
         average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr/ len(test_loader))  # Compute average loss for the epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], '
