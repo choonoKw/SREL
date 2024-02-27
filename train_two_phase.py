@@ -15,13 +15,14 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
 from model.srel_twoPhase import SREL_intra
 
-from utils.custom_loss import custom_loss_function
-from utils.worst_sinr import worst_sinr_function
+from utils.custom_loss_intra import custom_loss_function, sinr_function
+# from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
 from visualization.plotting import plot_losses # result plot
 
 import time
+import os
 
 def main():
     # Load dataset
@@ -29,6 +30,9 @@ def main():
     y_M, Ly = load_mapVector('data/data_mapV.mat')
     data_num = '1e1'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
+    
+    # for results
+    directory_path = f'weights/Nstep{N_step:02d}_data{data_num}'
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -39,8 +43,8 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
+    test_loader = DataLoader(val_dataset, batch_size=10, shuffle=False)
     
     # loading constant
     constants['Ly'] = Ly
@@ -50,24 +54,25 @@ def main():
 
     ###############################################################
     # Initialize model
-    N_step = 10
+    N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
     num_epochs = 10
     # Initialize the optimizer
-    optimizer = optim.Adam(model_intra.parameters(), lr=0.001)
+    optimizer = optim.Adam(model_intra.parameters(), lr=0.01)
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-7,
+        'lambda_eta': 1e-9,
         'lambda_sinr': 1e-3,
     }
     
     # prepare to write logs for tensorboard
-    writer = SummaryWriter(f'runs/SREL_multiStep{N_step:02d}_{data_num}')
-    global_step = 0
+    log_dir = f'runs/SREL/SREL_multiStep{N_step:02d}_{data_num}'
+    writer = SummaryWriter(log_dir)
+    # global_step = 0
     
-    # tensorboard --logdir=runs --reload_interval 5
+    # tensorboard --logdir=runs/SREL --reload_interval 5
     ###############################################################
     
     # Check for GPU availability
@@ -107,6 +112,13 @@ def main():
                 
                 model_outputs = model_intra(phi_batch, w_batch, y)
                 
+                # # plot gradient
+                # for name, param in model_intra.named_parameters():
+                #     if param.grad is not None:
+                #         print(f"{name}: Gradient norm: {param.grad.norm().item()}")
+                #     else:
+                #         print(f"{name}: No grad")
+                
                 # calculate loss            
                 loss = custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs)
             
@@ -116,10 +128,8 @@ def main():
                 total_train_loss += loss.item()
             
             
-            # global_step += 1
-            
         # Compute average loss for the epoch
-        average_train_loss = total_train_loss / len(train_loader)
+        average_train_loss = total_train_loss / len(train_loader) / model_intra.M
         
         # Log the loss
         writer.add_scalar('Loss/Training', average_train_loss, epoch)
@@ -132,8 +142,8 @@ def main():
         
         # Validation phase
         model_intra.eval()  # Set model to evaluation mode
-        total_val_loss = 0.0
         
+        total_val_loss = 0.0
         sum_of_worst_sinr = 0.0  # Accumulate loss over all batches
         
         with torch.no_grad():  # Disable gradient computation
@@ -145,36 +155,35 @@ def main():
                 w_M_batch = w_M_batch.to(device)
                 y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
                 
-                # phi_optimal_batch, eta_M_batch = model(phi_batch, w_M_batch, y_M)
-                # s_optimal_batch = modulus * torch.exp(1j * phi_optimal_batch)
-                model_outputs = model(phi_batch, w_M_batch, y_M)
+                # sinr_M = torch.empty(model_intra.M)
+                for m, (G_batch, H_batch, w_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
+                                                        torch.unbind(H_M_batch, dim=3),
+                                                        torch.unbind(w_M_batch, dim=2))):
+                    y = y_M[:,m]
+                    
+                    model_outputs = model_intra(phi_batch, w_batch, y)
+                    
+                    # calculate loss                            
+                    val_loss = custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs)
+                    total_val_loss += val_loss.item()
                 
-                # calculate loss
-                # primary_loss = sum_of_reciprocal(constants, s_optimal_batch, G_M_batch, H_M_batch)
-                # regularization_loss = regularizer_eta(constants, s_batch, G_M_batch, H_M_batch, eta_M_batch)
-                # val_loss = primary_loss + lambda_eta * regularization_loss
-                
-                val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
-                total_val_loss += val_loss.item()
-                
-                s_list_batch = model_outputs['s_list_batch'].to(device)
-                sum_of_worst_sinr += worst_sinr_function(constants, s_list_batch[:,:,-1], G_M_batch, H_M_batch)
-        # validation_losses.append(total_val_loss / len(test_loader))
+                    s_stack_batch = model_outputs['s_stack_batch']
+                    
+                    sum_of_worst_sinr += sinr_function(constants, G_batch, H_batch, hyperparameters, s_stack_batch[:,-1,:])
+                    
+                # sum_of_worst_sinr += torch.min(sinr_M)
+            # Store the average loss for this epoch
+            average_val_loss = total_val_loss / len(test_loader) / model_intra.M
+            validation_losses.append(average_val_loss)
         
+            # Log the loss
+            writer.add_scalar('Loss/Testing', average_val_loss, epoch)
+            writer.flush()
         
-        
-        # Store the average loss for this epoch
-        average_val_loss = total_val_loss / len(test_loader)
-        validation_losses.append(average_val_loss)
-        
-        # Log the loss
-        writer.add_scalar('Loss/Testing', average_val_loss, epoch)
-        writer.flush()
-        
-        average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr/ len(test_loader))  # Compute average loss for the epoch
-        print(f'Epoch [{epoch+1}/{num_epochs}], '
-              # f'Train Loss = {average_train_loss:.4f}, '
-              f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
+            average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr/ len(test_loader))  # Compute average loss for the epoch
+            print(f'Epoch [{epoch+1}/{num_epochs}], '
+                  # f'Train Loss = {average_train_loss:.4f}, '
+                  f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
         
     # End time
     end_time = time.time()
@@ -187,7 +196,11 @@ def main():
     # After completing all epochs, plot the training loss
     plot_losses(training_losses, validation_losses)
     
+    
+    os.makedirs(directory_path, exist_ok=True)
     torch.save(model_intra.state_dict(), f'weights/Nstep{N_step:02d}_data{data_num}/model_weights.pth')
+    
+    # writer = SummaryWriter(log_dir)
     
 if __name__ == "__main__":
     main()
