@@ -22,12 +22,13 @@ from torch.utils.tensorboard import SummaryWriter #tensorboard
 from visualization.plotting import plot_losses # result plot
 
 import time
+import os
 
 def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     v_M, Lv = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     # Split dataset into training and validation
@@ -50,10 +51,10 @@ def main():
 
     ###############################################################
     # Initialize model
-    N_step = 10
+    N_step = 5
     constants['N_step'] = N_step
     model = SREL(constants)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
@@ -187,6 +188,8 @@ def main():
     # After completing all epochs, plot the training loss
     plot_losses(training_losses, validation_losses)
     
+    directory_path = f'weights/Nstep{N_step:02d}_data{data_num}'
+    os.makedirs(directory_path, exist_ok=True)
     torch.save(model.state_dict(), f'weights/Nstep{N_step:02d}_data{data_num}/model_weights.pth')
     
 if __name__ == "__main__":
