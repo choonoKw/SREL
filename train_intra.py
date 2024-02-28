@@ -2,7 +2,10 @@
 """
 Created on Mon Feb 26 12:33:43 2024
 
-@author: jbk5816
+@author: Junho Kweon
+
+Train intra-parameters
+
 """
 
 import torch
@@ -80,6 +83,7 @@ def main():
     writer = SummaryWriter(log_dir)
     
     dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -211,11 +215,17 @@ def main():
     
     plot_losses(training_losses, validation_losses)
     
-    os.makedirs(dir_weight_save, exist_ok=True)
-    torch.save(model_intra.state_dict(), f'weights/Nstep{N_step:02d}_data{data_num}/model_weights.pth')
     
-    # writer = SummaryWriter(log_dir)
+    
+    # save model's information
+    save_dict = {
+        'state_dict': model_intra.state_dict(),
+        'N_step': model_intra.N_step,
+        # Include any other attributes here
+    }
+    # dir_dict_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    # os.makedirs(dir_dict_save, exist_ok=True)
+    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
 if __name__ == "__main__":
     main()
-
