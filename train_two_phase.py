@@ -31,8 +31,6 @@ def main():
     data_num = '1e1'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
-    # for results
-    directory_path = f'weights/Nstep{N_step:02d}_data{data_num}'
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -74,6 +72,8 @@ def main():
     
     # tensorboard --logdir=runs/SREL --reload_interval 5
     ###############################################################
+    # for results
+    directory_path = f'weights/Nstep{N_step:02d}_data{data_num}'
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
