@@ -67,10 +67,10 @@ def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_out
     
     return loss_sum/ batch_size
 
-def sinr_function(constants, G_batch, H_batch, hyperparameters, s_batch):
+def sinr_function(constants, G_batch, H_batch, s_batch):
     batch_size = s_batch.size(0)
     
-    sinr_sum = 0.0
+    sinr_batch = torch.empty(batch_size)
     for idx_batch in range(batch_size):
         G = G_batch[idx_batch]
         H = H_batch[idx_batch]
@@ -79,8 +79,8 @@ def sinr_function(constants, G_batch, H_batch, hyperparameters, s_batch):
         
         numerator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
         denominator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
-        sinr_sum += numerator / denominator
+        sinr_batch[idx_batch] = numerator / denominator
 
         # Average the loss over the batch
         
-    return sinr_sum/batch_size
+    return sinr_batch
