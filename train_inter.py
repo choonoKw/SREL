@@ -5,3 +5,137 @@ Created on Wed Feb 28 14:06:24 2024
 @author: jbk5816
 """
 
+import torch
+import torch.optim as optim
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader, Subset
+
+from utils.complex_valued_dataset import ComplexValuedDataset
+from utils.load_scalars_from_setup import load_scalars_from_setup
+from utils.load_mapVector import load_mapVector
+from model.srel_intra import SREL_intra
+from model.srel_inter import SREL_inter
+
+# from utils.custom_loss_intra import custom_loss_function, sinr_function
+from utils.custom_loss_inter import custom_loss_function
+
+# from utils.worst_sinr import worst_sinr_function
+
+from torch.utils.tensorboard import SummaryWriter #tensorboard
+# tensorboard --logdir=runs/SREL --reload_interval 5
+# tensorboard --logdir=runs/SREL_intra
+from visualization.plotting import plot_losses # result plot
+
+import datetime
+import time
+import os
+
+def main():
+    # Load dataset
+    constants = load_scalars_from_setup('data/data_setup.mat')
+    y_M, Ly = load_mapVector('data/data_mapV.mat')
+    data_num = '1e1'
+    dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
+    
+    # Split dataset into training and validation
+    train_indices, val_indices = train_test_split(
+        range(len(dataset)),
+        test_size=0.2,  # 20% for validation
+        random_state=42
+    )
+    train_dataset = Subset(dataset, train_indices)
+    val_dataset = Subset(dataset, val_indices)
+    
+    train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
+    test_loader = DataLoader(val_dataset, batch_size=10, shuffle=False)
+    
+    
+    # loading constant
+    constants['Ly'] = Ly
+    Nt = constants['Nt']
+    N = constants['N']
+    constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
+    
+    # Load the bundled dictionary
+    dir_dict = 'weights/SREL_intra/Nstep05_data1e1_20240228-150332'
+    loaded_dict = torch.load(os.path.join(dir_dict,'model_with_attrs.pth'))
+    N_step = loaded_dict['N_step']
+    constants['N_step'] = N_step
+    
+    # Step 1: Instantiate model1
+    model_intra = SREL_intra(constants)
+    model_intra.load_state_dict(loaded_dict['state_dict'])                         
+    
+    # freeze model_intra
+    for param in model_intra.parameters():
+        param.requires_grad = False
+    
+    # Initialize model
+    model_inter = SREL_inter(constants, model_intra)
+    
+    
+    ###############################################################
+    ## Control Panel
+    ###############################################################
+    num_epochs = 10
+    # Initialize the optimizer
+    optimizer = optim.Adam(model_intra.parameters(), lr=0.01)
+    
+    # loss setting
+    hyperparameters = {
+        'lambda_eta': 1e-5,
+        'lambda_sinr': 1e-2,
+    }    
+    ###############################################################
+    # for results
+    # Get the current time
+    current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
+    
+    # Create a unique directory name using the current time and the N_step value
+    log_dir = f'runs/SREL_intra/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
+    writer = SummaryWriter(log_dir)
+    
+    dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    os.makedirs(dir_weight_save, exist_ok=True)
+    
+    # Check for GPU availability
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cpu")
+    print(f"Using device: {device}")
+    model_intra.to(device)
+    model_intra.device = device
+    
+    # List to store average loss per epoch
+    training_losses = []
+    validation_losses = []
+    
+    
+    start_time = time.time()
+    # Training loop
+    for epoch in range(num_epochs):
+        model_intra.train()  # Set model to training mode
+        total_train_loss = 0.0
+        
+        
+        for phi_batch, w_M_batch, G_M_batch, H_M_batch in train_loader:
+            # if torch.cuda.is_available():
+            phi_batch = phi_batch.to(device)
+            G_M_batch = G_M_batch.to(device)
+            H_M_batch = H_M_batch.to(device)
+            w_M_batch = w_M_batch.to(device)
+            y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
+            
+            # Perform training steps
+            optimizer.zero_grad()
+            
+            s_stack_batch = model_inter(phi_batch, w_M_batch, y_M)
+            
+            loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
+            
+            loss.backward()
+            optimizer.step()
+            
+            total_train_loss += loss.item()
+    
+if __name__ == "__main__":
+    main()
