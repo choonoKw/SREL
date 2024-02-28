@@ -16,6 +16,10 @@ from utils.complex_valued_dataset import ComplexValuedDataset
 
 from utils.custom_loss_intra import sinr_function
 
+import datetime
+import os
+from scipy.io import savemat
+
 # Load constants and model architecture parameters, similar to train.py
 constants = load_scalars_from_setup('data/data_setup.mat')
 y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -40,11 +44,12 @@ test_loader = DataLoader(dataset, batch_size=2, shuffle=False)  # Adjust batch s
 
 sum_of_worst_sinr_avg = 0.0
 
+# compute the average of the worst-sinr
 with torch.no_grad():  # Disable gradient computation during testing
     for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
         
         batch_size = phi_batch.size(0)
-        sinr_M_batch = torch.empty(M, batch_size)
+        sinr_M_batch = torch.empty(batch_size,M)
         
         for m, (G_batch, H_batch, w_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
                                                 torch.unbind(H_M_batch, dim=3),
@@ -56,9 +61,24 @@ with torch.no_grad():  # Disable gradient computation during testing
             s_stack_batch = model_outputs['s_stack_batch']
             s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
         
-            sinr_M_batch[m,:] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
+            sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
         
-        sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=0).values)/batch_size
+        worst_sinr_batch = torch.min(sinr_M_batch, dim=1).values        
+        sum_of_worst_sinr_avg += torch.sum(worst_sinr_batch)/batch_size
+        
+        
         
 average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
 print(f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
+
+# save the last output
+data = {'w_M_batch': w_M_batch,'G_M_batch': G_M_batch, 'H_M_batch': H_M_batch, \
+        's_stack_batch': s_stack_batch}
+
+    
+# Save to a .mat file
+current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')  
+dir_matFile =  'mat/SREL_intra/'
+os.makedirs(dir_matFile, exist_ok=True)
+file_path = os.path.join(dir_matFile, f'Nstep{N_step:02d}_data{data_num}_{current_time}.mat')
+savemat(file_path, data)
