@@ -16,8 +16,8 @@ from utils.load_mapVector import load_mapVector
 from model.srel_intra import SREL_intra
 from model.srel_inter import SREL_inter
 
-# from utils.custom_loss_intra import custom_loss_function, sinr_function
 from utils.custom_loss_inter import custom_loss_function
+from utils.worst_sinr import worst_sinr_function
 
 # from utils.worst_sinr import worst_sinr_function
 
@@ -31,6 +31,7 @@ import time
 import os
 
 def main():
+    torch.autograd.set_detect_anomaly(True)
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -57,7 +58,7 @@ def main():
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
     # Load the bundled dictionary
-    dir_dict = 'weights/SREL_intra/Nstep05_data1e1_20240228-150332'
+    dir_dict = 'weights/SREL_intra/Nstep05_data1e1_20240228-203451'
     loaded_dict = torch.load(os.path.join(dir_dict,'model_with_attrs.pth'))
     N_step = loaded_dict['N_step']
     constants['N_step'] = N_step
@@ -79,7 +80,7 @@ def main():
     ###############################################################
     num_epochs = 10
     # Initialize the optimizer
-    optimizer = optim.Adam(model_intra.parameters(), lr=0.01)
+    optimizer = optim.Adam(model_inter.parameters(), lr=0.1)
     
     # loss setting
     hyperparameters = {
@@ -92,10 +93,10 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
+    log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    dir_weight_save = f'weights/SREL_inter/Nstep{N_step:02d}_data{data_num}_{current_time}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -104,6 +105,7 @@ def main():
     print(f"Using device: {device}")
     model_intra.to(device)
     model_intra.device = device
+    model_inter.device = device
     
     # List to store average loss per epoch
     training_losses = []
@@ -113,7 +115,11 @@ def main():
     start_time = time.time()
     # Training loop
     for epoch in range(num_epochs):
-        model_intra.train()  # Set model to training mode
+        ###############################################################
+        # Training phase
+        ###############################################################
+        
+        model_inter.train()  # Set model to training mode
         total_train_loss = 0.0
         
         
@@ -130,12 +136,87 @@ def main():
             
             s_stack_batch = model_inter(phi_batch, w_M_batch, y_M)
             
+            # print gradient to see gradient flows
+            # for name, param in model_inter.est_mu_modules.named_parameters():
+            #     if param.grad is not None:
+            #         print(f"{name}: Gradient norm: {param.grad.norm().item()}")
+            #     else:
+            #         print(f"{name}: No grad")
+            
+            
+            # calculate loss             
             loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
             
             loss.backward()
             optimizer.step()
             
             total_train_loss += loss.item()
+            
+        # Compute average loss for the epoch
+        average_train_loss = total_train_loss / len(train_loader) / model_inter.M
+        
+        # Log the loss
+        writer.add_scalar('Loss/Training', average_train_loss, epoch)
+        # writer.flush()
+        
+        training_losses.append(average_train_loss)
+            
+        ###############################################################
+        # Validation phase
+        ###############################################################
+        model_inter.eval()  # Set model to evaluation mode
+        
+        total_val_loss = 0.0
+        sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
+        
+        with torch.no_grad():  # Disable gradient computation            
+            for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
+                # if torch.cuda.is_available():
+                phi_batch = phi_batch.to(device)
+                G_M_batch = G_M_batch.to(device)
+                H_M_batch = H_M_batch.to(device)
+                w_M_batch = w_M_batch.to(device)
+                y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
+                
+                # Perform training steps
+                optimizer.zero_grad()
+                
+                s_stack_batch = model_inter(phi_batch, w_M_batch, y_M)
+                
+                val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
+                total_val_loss += val_loss.item()
+                
+                s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
+                
+                sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                
+        average_val_loss = total_val_loss / len(test_loader) / model_inter.M
+        validation_losses.append(average_val_loss)
+    
+        # Log the loss
+        writer.add_scalar('Loss/Testing', average_val_loss, epoch)
+        writer.flush()
+        
+        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
+        print(f'Epoch [{epoch+1}/{num_epochs}], '
+              # f'Train Loss = {average_train_loss:.4f}, '
+              f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+        
+    
+    # End time
+    end_time = time.time()
+    
+    # Calculate the duration
+    duration = end_time - start_time
+    
+    print(f"Training completed in: {duration:.2f} seconds")
+        
+    # After completing all epochs, plot the training loss
+    
+    plot_losses(training_losses, validation_losses)
+    
+    # save model's information
+    torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
 if __name__ == "__main__":
     main()
