@@ -38,6 +38,7 @@ class SREL_intra(nn.Module):
         # Initialize the list
         s_stack_batch = torch.zeros(batch_size, N_step+1, self.Ls, dtype=torch.complex64)
         eta_stack_batch = torch.zeros(batch_size, N_step, self.Ls) 
+        rho_stack_batch = torch.zeros(batch_size, N_step)
         
         for idx_batch in range(batch_size):
             phi0 = phi_batch[idx_batch]
@@ -51,18 +52,20 @@ class SREL_intra(nn.Module):
                 
                 x = torch.cat((s.real, s.imag, w.real, w.imag, y), dim=0)
                 eta = self.est_eta_modules[update_step](x)
-                beta = self.est_rho_modules[update_step](x)  # Remove extra dimensions
+                rho = self.est_rho_modules[update_step](x)  # Remove extra dimensions
                 
-                phi = phi - beta*eta  # Update phi
+                phi = phi - rho*eta  # Update phi
                 
                 # save on list
                 s_stack_batch[idx_batch,update_step,:] = s
                 eta_stack_batch[idx_batch,update_step,:] = eta
+                rho_stack_batch[idx_batch,update_step] = rho
             
             s_stack_batch[idx_batch,N_step,:] = modulus*torch.exp(1j *phi)  # Saving the final s after all updates
             
         model_outputs = {
             's_stack_batch': s_stack_batch,
-            'eta_stack_batch': eta_stack_batch
+            'eta_stack_batch': eta_stack_batch,
+            'rho_stack_batch': rho_stack_batch
         }
         return model_outputs

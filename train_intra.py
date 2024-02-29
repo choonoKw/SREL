@@ -10,6 +10,7 @@ Train intra-parameters
 
 import torch
 import torch.optim as optim
+import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -37,7 +38,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '1e2'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -50,8 +51,8 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=10, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=50, shuffle=True)
+    test_loader = DataLoader(val_dataset, batch_size=50, shuffle=False)
     
     # loading constant
     constants['Ly'] = Ly
@@ -66,15 +67,19 @@ def main():
     N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
-    model_intra.apply(init_weights)
+    #model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
-    optimizer = optim.Adam(model_intra.parameters(), lr=0.01)
+    learning_rate=1e-4
+    print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
+    optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
+    lambda_eta = 1e-6
+    lambda_sinr = 1e-2
     hyperparameters = {
-        'lambda_eta': 1e-7,
-        'lambda_sinr': 1e-3,
+        'lambda_eta': lambda_eta,
+        'lambda_sinr': lambda_sinr,
     }    
     ###############################################################
     # for results
@@ -82,7 +87,7 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
+    log_dir = f'runs/SREL_intra/sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}_{current_time}'
     writer = SummaryWriter(log_dir)
     
     dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
@@ -185,6 +190,7 @@ def main():
                 
                     s_stack_batch = model_outputs['s_stack_batch']
                     s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
+                    s_optimal_batch = s_optimal_batch.to(device)
                     sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
                     
                 sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
@@ -230,11 +236,18 @@ def main():
     # os.makedirs(dir_dict_save, exist_ok=True)
     torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
-def init_weights(m):
-    if isinstance(m, nn.Linear):
-        torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
-        if m.bias is not None:
-            torch.nn.init.constant_(m.bias, 0)
+    rho_stack_batch = model_outputs['rho_stack_batch']
+    rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
+    
+    print('rho values = ')
+    for n in range(model_intra.N_step):
+        print(f'{rho_stack_avg[n].item():.4f}')
+    
+#def init_weights(m):
+#    if isinstance(m, nn.Linear):
+#        torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+#        if m.bias is not None:
+#            torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
     main()
