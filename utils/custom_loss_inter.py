@@ -7,6 +7,7 @@ Created on Wed Feb 28 15:51:20 2024
 
 
 import torch
+from utils.custom_loss_intra import reciprocal_sinr
 
 
 def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch):
@@ -27,16 +28,16 @@ def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_sta
     
         for n in range(N_step-1):
             s = s_stack[n+1]
-            eta = eta_stack[n+1]
             
-            f_eta += regularizer_eta(constants, G, H, s, eta)
-            f_sinr += reciprocal_sinr(constants, G, H, s)
+            for m, (G, H) in enumerate(zip(torch.unbind(G_M, dim=2),
+                                                    torch.unbind(H_M, dim=2))):
+            
+                f_sinr += reciprocal_sinr(constants, G, H, s)
         
         s = s_stack[-1]
         f_sinr_opt = reciprocal_sinr(constants, G, H, s)
     
-        loss = f_sinr_opt + \
-            hyperparameters['lambda_sinr']*f_sinr/(N_step-1) + hyperparameters['lambda_eta']*f_eta/N_step
+        loss = f_sinr_opt + hyperparameters['lambda_sinr']*f_sinr/(N_step-1)
             
         loss_sum += loss
     
