@@ -31,6 +31,8 @@ import datetime
 import time
 import os
 
+import torch.nn as nn
+
 def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
@@ -64,14 +66,15 @@ def main():
     N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
+    model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
     optimizer = optim.Adam(model_intra.parameters(), lr=0.01)
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-5,
-        'lambda_sinr': 1e-2,
+        'lambda_eta': 1e-4,
+        'lambda_sinr': 1e-3,
     }    
     ###############################################################
     # for results
@@ -226,6 +229,12 @@ def main():
     # dir_dict_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
     # os.makedirs(dir_dict_save, exist_ok=True)
     torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+        if m.bias is not None:
+            torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
     main()

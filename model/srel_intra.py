@@ -24,13 +24,14 @@ class SREL_intra(nn.Module):
             Estimate_eta(2*self.Ls + 2*constants['Lw'] + constants['Ly'], self.Ls)
             for _ in range(self.N_step)
         ])
+        
         self.est_rho_modules = nn.ModuleList([
             Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
             for _ in range(self.N_step)
         ])
         
-    def forward(self, phi0_batch, w_batch, y):
-        batch_size = phi0_batch.size(0)
+    def forward(self, phi_batch, w_batch, y):
+        batch_size = phi_batch.size(0)
         N_step = self.N_step
         modulus = self.modulus
         
@@ -39,7 +40,7 @@ class SREL_intra(nn.Module):
         eta_stack_batch = torch.zeros(batch_size, N_step, self.Ls) 
         
         for idx_batch in range(batch_size):
-            phi0 = phi0_batch[idx_batch]
+            phi0 = phi_batch[idx_batch]
             w = w_batch[idx_batch]
             
             
