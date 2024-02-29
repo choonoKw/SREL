@@ -6,7 +6,7 @@ Created on Mon Feb 19 13:38:42 2024
 """
 
 import torch
-from model.srel_twoPhase import SREL_intra
+from model.srel_intra import SREL_intra
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
 from torch.utils.data import DataLoader
@@ -24,18 +24,23 @@ from scipy.io import savemat
 constants = load_scalars_from_setup('data/data_setup.mat')
 y_M, Ly = load_mapVector('data/data_mapV.mat')
 constants['Ly'] = Ly
-constants['N_step'] = 5  # Ensure this matches the training setup
+# constants['N_step'] = 5  # Ensure this matches the training setup
 constants['modulus'] = 1 / torch.sqrt(torch.tensor(constants['Nt'] * constants['N'], dtype=torch.float))
+
+
+dir_dict = 'weights/SREL_intra/Nstep05_data1e1_20240228-211924'
+loaded_dict = torch.load(os.path.join(dir_dict,'model_with_attrs.pth'))
+N_step = loaded_dict['N_step']
+constants['N_step'] = N_step
+
 model_intra = SREL_intra(constants)
+model_intra.load_state_dict(loaded_dict['state_dict'])               
 
-N_step = constants['N_step']
+# N_step = constants['N_step']
 data_num = '1e1'
-weight_file_location = f'weights/Nstep{N_step:02d}_data{data_num}/model_weights.pth'
 
-
-# Load saved model weights
 M = constants['M']
-model_intra.load_state_dict(torch.load(weight_file_location))
+# model_intra.load_state_dict(torch.load(weight_file_location))
 model_intra.eval()  # Set the model to evaluation mode
 
 # Assuming you have a test dataset or using the validation dataset as an example
@@ -56,29 +61,47 @@ with torch.no_grad():  # Disable gradient computation during testing
                                                 torch.unbind(w_M_batch, dim=2))):
             y = y_M[:,m]
             
-            model_outputs = model_intra(phi_batch, w_batch, y)
-            # model_outputs = model(phi_batch, w_M_batch, y_M)
-            s_stack_batch = model_outputs['s_stack_batch']
-            s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
+            for idx_batch in range(batch_size):
+                phi0 = phi_batch[idx_batch]
+                w = w_batch[idx_batch]
+                
+                
+                # Repeat the update process N_step times
+                phi = phi0
+                for update_step in range(N_step):
+                    s = model_intra.modulus*torch.exp(1j *phi)
+                    
+                    x = torch.cat((s.real, s.imag, w.real, w.imag, y), dim=0)
+                    eta = model_intra.est_eta_modules[update_step](x)
+                    beta = model_intra.est_rho_modules[update_step](x)
+                    break
+                break
+            break
+        break
+            
+#             model_outputs = model_intra(phi_batch, w_batch, y)
+#             # model_outputs = model(phi_batch, w_M_batch, y_M)
+#             s_stack_batch = model_outputs['s_stack_batch']
+#             s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
         
-            sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
+#             sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
         
-        worst_sinr_batch = torch.min(sinr_M_batch, dim=1).values        
-        sum_of_worst_sinr_avg += torch.sum(worst_sinr_batch)/batch_size
+#         worst_sinr_batch = torch.min(sinr_M_batch, dim=1).values        
+#         sum_of_worst_sinr_avg += torch.sum(worst_sinr_batch)/batch_size
         
         
         
-average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
-print(f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
+# average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
+# print(f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
 
-# save the last output
-data = {'w_M_batch': w_M_batch,'G_M_batch': G_M_batch, 'H_M_batch': H_M_batch, \
-        's_stack_batch': s_stack_batch}
+# # save the last output
+# data = {'w_M_batch': w_M_batch,'G_M_batch': G_M_batch, 'H_M_batch': H_M_batch, \
+#         's_stack_batch': s_stack_batch}
 
     
-# Save to a .mat file
-current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')  
-dir_matFile =  'mat/SREL_intra/'
-os.makedirs(dir_matFile, exist_ok=True)
-file_path = os.path.join(dir_matFile, f'Nstep{N_step:02d}_data{data_num}_{current_time}.mat')
-savemat(file_path, data)
+# # Save to a .mat file
+# current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')  
+# dir_matFile =  'mat/SREL_intra/'
+# os.makedirs(dir_matFile, exist_ok=True)
+# file_path = os.path.join(dir_matFile, f'Nstep{N_step:02d}_data{data_num}_{current_time}.mat')
+# savemat(file_path, data)

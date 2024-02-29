@@ -73,7 +73,7 @@ def main():
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-4,
+        'lambda_eta': 1e-7,
         'lambda_sinr': 1e-3,
     }    
     ###############################################################
