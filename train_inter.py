@@ -7,6 +7,7 @@ Created on Wed Feb 28 14:06:24 2024
 
 import torch
 import torch.optim as optim
+import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -57,9 +58,13 @@ def main():
     N = constants['N']
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
+    # Check for GPU availability
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    
     # Load the bundled dictionary
-    dir_dict = 'weights/SREL_intra/Nstep05_data1e1_20240228-203451'
-    loaded_dict = torch.load(os.path.join(dir_dict,'model_with_attrs.pth'))
+    dir_dict = 'weights/SREL_intra/Nstep05_data1e2_20240229-012749'
+    loaded_dict = torch.load(os.path.join(dir_dict,'model_with_attrs.pth'), map_location=device)
     N_step = loaded_dict['N_step']
     constants['N_step'] = N_step
     
@@ -80,12 +85,14 @@ def main():
     ###############################################################
     num_epochs = 10
     # Initialize the optimizer
-    optimizer = optim.Adam(model_inter.parameters(), lr=0.1)
+    learning_rate=5e-6
+    print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
+    optimizer = optim.Adam(model_inter.parameters(), lr=learning_rate)
     
     # loss setting
+    lambda_sinr = 1e-3
     hyperparameters = {
-        'lambda_eta': 1e-5,
-        'lambda_sinr': 1e-2,
+        'lambda_sinr': lambda_sinr,
     }    
     ###############################################################
     # for results
@@ -93,16 +100,13 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
-    writer = SummaryWriter(log_dir)
+    # log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
+    dir_log = f'runs/SREL_inter/lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
+    writer = SummaryWriter(dir_log)
     
     dir_weight_save = f'weights/SREL_inter/Nstep{N_step:02d}_data{data_num}_{current_time}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
-    # Check for GPU availability
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = torch.device("cpu")
-    print(f"Using device: {device}")
     model_intra.to(device)
     model_intra.device = device
     model_inter.device = device
@@ -134,7 +138,7 @@ def main():
             # Perform training steps
             optimizer.zero_grad()
             
-            s_stack_batch = model_inter(phi_batch, w_M_batch, y_M)
+            model_outputs = model_inter(phi_batch, w_M_batch, y_M)
             
             # print gradient to see gradient flows
             # for name, param in model_inter.est_mu_modules.named_parameters():
@@ -144,7 +148,8 @@ def main():
             #         print(f"{name}: No grad")
             
             
-            # calculate loss             
+            # calculate loss            
+            s_stack_batch = model_outputs['s_stack_batch']
             loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
             
             loss.backward()
@@ -181,7 +186,9 @@ def main():
                 # Perform training steps
                 optimizer.zero_grad()
                 
-                s_stack_batch = model_inter(phi_batch, w_M_batch, y_M)
+                model_outputs = model_inter(phi_batch, w_M_batch, y_M)
+                
+                s_stack_batch = model_outputs['s_stack_batch']
                 
                 val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
                 total_val_loss += val_loss.item()
@@ -216,7 +223,7 @@ def main():
     plot_losses(training_losses, validation_losses)
     
     # save model's information
-    torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    # torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
 if __name__ == "__main__":
     main()
