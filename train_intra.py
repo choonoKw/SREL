@@ -38,7 +38,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e2'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -51,8 +51,9 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    train_loader = DataLoader(train_dataset, batch_size=50, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=50, shuffle=False)
+    batch_size = 20
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # loading constant
     constants['Ly'] = Ly
@@ -70,7 +71,7 @@ def main():
     #model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
-    learning_rate=1e-4
+    learning_rate=1e-3
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
@@ -87,10 +88,10 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra/Nstep{N_step:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}_{current_time}'
+    log_dir = f'runs/SREL_intra/data{data_num}/Nstep{N_step:02d}_batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}_{current_time}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    dir_weight_save = f'weights/SREL_intra/data{data_num}/Nstep{N_step:02d}_{current_time}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability

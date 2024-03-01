@@ -48,8 +48,9 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    train_loader = DataLoader(train_dataset, batch_size=10, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=10, shuffle=False)
+    batch_size = 50
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     
     # loading constant
@@ -85,7 +86,7 @@ def main():
     ###############################################################
     num_epochs = 10
     # Initialize the optimizer
-    learning_rate=1e-3
+    learning_rate=1e-2
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
     optimizer = optim.Adam(model_inter.parameters(), lr=learning_rate)
     
@@ -101,11 +102,11 @@ def main():
     
     # Create a unique directory name using the current time and the N_step value
     # log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
-    dir_log = f'runs/SREL_inter/lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
+    dir_log = f'runs/SREL_inter/batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
     writer = SummaryWriter(dir_log)
     
     dir_weight_save = f'weights/SREL_inter/Nstep{N_step:02d}_data{data_num}_{current_time}'
-    os.makedirs(dir_weight_save, exist_ok=True)
+    #os.makedirs(dir_weight_save, exist_ok=True)
     
     model_intra.to(device)
     model_inter.to(device)
@@ -224,7 +225,7 @@ def main():
     plot_losses(training_losses, validation_losses)
     
     # save model's information
-    torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    # torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
 if __name__ == "__main__":
     main()
