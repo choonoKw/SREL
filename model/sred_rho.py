@@ -5,7 +5,7 @@ Created on Fri Mar  1 14:51:22 2024
 @author: jbk5816
 """
 
-from model.estimate_rho import Estimate_rho
+from model.estimate_rho_sred import Estimate_rho
 
 import torch
 import torch.nn as nn
