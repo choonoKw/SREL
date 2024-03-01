@@ -36,8 +36,8 @@ class SREL_inter(nn.Module):
         M = self.M
         
         # Initialize the list
-        s_stack_batch = torch.zeros(batch_size, N_step+1, self.Ls, dtype=torch.complex64)
-        mu_stack_batch = torch.zeros(batch_size, N_step, M)
+        s_stack_batch = torch.zeros(batch_size, N_step+1, self.Ls, dtype=torch.complex64).to(self.device)
+        mu_stack_batch = torch.zeros(batch_size, N_step, M).to(self.device)
         
         for idx_batch in range(batch_size):
             phi0 = phi0_batch[idx_batch]
@@ -48,7 +48,7 @@ class SREL_inter(nn.Module):
             for update_step in range(N_step):
                 s = modulus*torch.exp(1j *phi)
                 
-                eta_net = torch.zeros(self.Ls)
+                eta_net = torch.zeros(self.Ls).to(self.device)
                 
                 for m in range(M):
                     w = w_M[:,m]

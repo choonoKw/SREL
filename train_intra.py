@@ -64,7 +64,7 @@ def main():
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 5
+    N_step = 10
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
     #model_intra.apply(init_weights)
@@ -87,7 +87,7 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra/lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}_{current_time}'
+    log_dir = f'runs/SREL_intra/Nstep{N_step:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}_{current_time}'
     writer = SummaryWriter(log_dir)
     
     dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'

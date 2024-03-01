@@ -36,7 +36,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '1e2'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     # Split dataset into training and validation
@@ -85,7 +85,7 @@ def main():
     ###############################################################
     num_epochs = 10
     # Initialize the optimizer
-    learning_rate=5e-6
+    learning_rate=1e-3
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
     optimizer = optim.Adam(model_inter.parameters(), lr=learning_rate)
     
@@ -108,6 +108,7 @@ def main():
     os.makedirs(dir_weight_save, exist_ok=True)
     
     model_intra.to(device)
+    model_inter.to(device)
     model_intra.device = device
     model_inter.device = device
     
@@ -223,7 +224,7 @@ def main():
     plot_losses(training_losses, validation_losses)
     
     # save model's information
-    # torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    torch.save(model_inter.state_dict(), os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
 if __name__ == "__main__":
     main()
