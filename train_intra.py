@@ -65,7 +65,7 @@ def main():
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 10
+    N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
     #model_intra.apply(init_weights)

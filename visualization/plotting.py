@@ -16,7 +16,7 @@ def plot_training_loss(epoch_losses):
     plt.ylabel('Loss')
     plt.title('Training Loss Over Epochs')
     plt.legend()
-    plt.show()
+    plt.show(block=False)
     
 def plot_losses(training_losses, validation_losses):
     plt.figure('Loss Plot', figsize=(10, 6))
@@ -27,4 +27,4 @@ def plot_losses(training_losses, validation_losses):
     plt.ylabel('Loss')
     plt.title('Loss Over Epochs')
     plt.legend()
-    plt.show()
+    plt.show(block=False)
