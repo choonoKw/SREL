@@ -17,8 +17,8 @@ def reciprocal_sinr(constants, G, H, s):
 
 def regularizer_eta(constants, G, H, s, eta):
     # Using torch.vdot for complex dot products where one operand is conjugated
-    sGs = torch.vdot(s, torch.matmul(G, s))  # Equivalent to s'*G*s in MATLAB
-    sHs = torch.vdot(s, torch.matmul(H, s))  # Equivalent to s'*H*s in MATLAB
+    sGs = torch.abs(torch.vdot(s, torch.matmul(G, s)))  # Equivalent to s'*G*s in MATLAB
+    sHs = torch.abs(torch.vdot(s, torch.matmul(H, s)))  # Equivalent to s'*H*s in MATLAB
     Gs = torch.matmul(G, s)  # G*s
     Hs = torch.matmul(H, s)  # H*s
         

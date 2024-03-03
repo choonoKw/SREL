@@ -36,7 +36,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e2'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     # Split dataset into training and validation
@@ -48,7 +48,7 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    batch_size = 50
+    batch_size = 20
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
@@ -64,7 +64,7 @@ def main():
     print(f"Using device: {device}")
     
     # Load the bundled dictionary
-    dir_dict = 'weights/SREL_intra/Nstep05_data1e2_20240229-012749'
+    dir_dict = 'weights/SREL_intra/data2e3/Nstep05_20240301-104516'
     loaded_dict = torch.load(os.path.join(dir_dict,'model_with_attrs.pth'), map_location=device)
     N_step = loaded_dict['N_step']
     constants['N_step'] = N_step
@@ -102,10 +102,10 @@ def main():
     
     # Create a unique directory name using the current time and the N_step value
     # log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
-    dir_log = f'runs/SREL_inter/batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
+    dir_log = f'runs/SREL_inter/data{data_num}/batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
     writer = SummaryWriter(dir_log)
     
-    dir_weight_save = f'weights/SREL_inter/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    dir_weight_save = f'weights/SREL_inter/data{data_num}/Nstep{N_step:02d}_data{data_num}_{current_time}'
     #os.makedirs(dir_weight_save, exist_ok=True)
     
     model_intra.to(device)

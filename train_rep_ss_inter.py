@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar  1 14:49:41 2024
+Created on Wed Feb 28 14:06:24 2024
 
 @author: jbk5816
+
+train the model with repeated step-size estimator: inter-target parameter learning stage
 """
 
 import torch
@@ -14,7 +16,8 @@ from torch.utils.data import DataLoader, Subset
 from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
-from model.sred_rho import SRED_rho
+from model.srel_rep_rho_intra import SREL_rep_rho_intra
+from model.srel_rep_ss_inter import SREL_rep_ss_inter
 
 from utils.custom_loss_inter import custom_loss_function
 from utils.worst_sinr import worst_sinr_function
@@ -30,15 +33,13 @@ import datetime
 import time
 import os
 
-import torch.nn as nn
-
-def main():
+def main(learning_rate):
+    torch.autograd.set_detect_anomaly(True)
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e2'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
-    
     
     # Split dataset into training and validation
     train_indices, val_indices = train_test_split(
@@ -49,35 +50,51 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    batch_size = 10
+    batch_size = 30
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    
     
     # loading constant
     constants['Ly'] = Ly
     Nt = constants['Nt']
     N = constants['N']
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
-
+    
+    # Check for GPU availability
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+    
+    # Load the bundled dictionary
+    dir_dict_saved = 'weights/SREL_rep_rho_intra/20240303-125219_Nstep05_batch10'
+    loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), map_location=device)
+    N_step = loaded_dict['N_step']
+    constants['N_step'] = N_step
+    
+    # Step 1: Instantiate model1
+    model_intra = SREL_rep_rho_intra(constants)
+    model_intra.load_state_dict(loaded_dict['state_dict'])                         
+    
+    # freeze model_intra
+    for param in model_intra.parameters():
+        param.requires_grad = False
+    
+    # Initialize model
+    model_inter = SREL_rep_ss_inter(constants, model_intra)
+    
+    
     ###############################################################
     ## Control Panel
     ###############################################################
-    # Initialize model
-    N_step = 10
-    constants['N_step'] = N_step
-    model_sred_rho = SRED_rho(constants)
-    #model_intra.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
-    learning_rate=1e-5
+    # learning_rate=1e-5
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
-    optimizer = optim.Adam(model_sred_rho.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model_inter.parameters(), lr=learning_rate)
     
     # loss setting
-    lambda_eta = 1e-6
     lambda_sinr = 1e-2
     hyperparameters = {
-        'lambda_eta': lambda_eta,
         'lambda_sinr': lambda_sinr,
     }    
     ###############################################################
@@ -86,18 +103,15 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SRED_rho/data{data_num}/Nstep{N_step:02d}_batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
-    writer = SummaryWriter(log_dir)
+    # log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
+    dir_log =f'runs/SREL_rep_ss_inter/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_batch{batch_size:02d}'
+    writer = SummaryWriter(dir_log)
+    #os.makedirs(dir_weight_save, exist_ok=True)
     
-    dir_weight_save = f'weights/SRED_rho/data{data_num}/Nstep{N_step:02d}_{current_time}'
-    os.makedirs(dir_weight_save, exist_ok=True)
-    
-    # Check for GPU availability
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = torch.device("cpu")
-    print(f"Using device: {device}")
-    model_sred_rho.to(device)
-    model_sred_rho.device = device
+    model_intra.to(device)
+    model_inter.to(device)
+    model_intra.device = device
+    model_inter.device = device
     
     # List to store average loss per epoch
     training_losses = []
@@ -107,7 +121,11 @@ def main():
     start_time = time.time()
     # Training loop
     for epoch in range(num_epochs):
-        model_sred_rho.train()  # Set model to training mode
+        ###############################################################
+        # Training phase
+        ###############################################################
+        
+        model_inter.train()  # Set model to training mode
         total_train_loss = 0.0
         
         
@@ -122,9 +140,17 @@ def main():
             # Perform training steps
             optimizer.zero_grad()
             
+            model_outputs = model_inter(phi_batch, w_M_batch, y_M)
             
-            model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+            # print gradient to see gradient flows
+            # for name, param in model_inter.est_mu_modules.named_parameters():
+            #     if param.grad is not None:
+            #         print(f"{name}: Gradient norm: {param.grad.norm().item()}")
+            #     else:
+            #         print(f"{name}: No grad")
             
+            
+            # calculate loss            
             s_stack_batch = model_outputs['s_stack_batch']
             loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
             
@@ -133,28 +159,26 @@ def main():
             
             total_train_loss += loss.item()
             
-            
         # Compute average loss for the epoch
-        average_train_loss = total_train_loss / len(train_loader) / model_sred_rho.M
+        average_train_loss = total_train_loss / len(train_loader) / model_inter.M
         
         # Log the loss
         writer.add_scalar('Loss/Training', average_train_loss, epoch)
         # writer.flush()
         
         training_losses.append(average_train_loss)
-        
-        
-        
-        
+            
+        ###############################################################
         # Validation phase
-        model_sred_rho.eval()  # Set model to evaluation mode
+        ###############################################################
+        model_inter.eval()  # Set model to evaluation mode
         
         total_val_loss = 0.0
         sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
         
-        with torch.no_grad():  # Disable gradient computation
+        with torch.no_grad():  # Disable gradient computation            
             for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
-                # s_batch = modulus * torch.exp(1j * phi_batch)
+                # if torch.cuda.is_available():
                 phi_batch = phi_batch.to(device)
                 G_M_batch = G_M_batch.to(device)
                 H_M_batch = H_M_batch.to(device)
@@ -164,7 +188,7 @@ def main():
                 # Perform training steps
                 optimizer.zero_grad()
                 
-                model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+                model_outputs = model_inter(phi_batch, w_M_batch, y_M)
                 
                 s_stack_batch = model_outputs['s_stack_batch']
                 
@@ -174,8 +198,8 @@ def main():
                 s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
                 
                 sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
-                    
-        average_val_loss = total_val_loss / len(test_loader) / model_sred_rho.M
+                
+        average_val_loss = total_val_loss / len(test_loader) / model_inter.M
         validation_losses.append(average_val_loss)
     
         # Log the loss
@@ -187,9 +211,16 @@ def main():
               # f'Train Loss = {average_train_loss:.4f}, '
               f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
         
-            
+        # validation of mu values
+        mu_M_stack_batch = model_outputs['mu_M_stack_batch']
+        mu_M_stack_avg = torch.sum(mu_M_stack_batch, dim=0)/batch_size
+        print('mu values = ')
+        for n in range(model_inter.N_step):
+            for m in range(model_inter.M):
+                print(f'{mu_M_stack_avg[n,m].item()}', end=",      ")
+            print('')
         
-        
+    
     # End time
     end_time = time.time()
     
@@ -202,22 +233,24 @@ def main():
     
     plot_losses(training_losses, validation_losses)
     
-    
     # save model's information
-    save_dict = {
-        'state_dict': model_sred_rho.state_dict(),
-        'N_step': model_sred_rho.N_step,
-        # Include any other attributes here
-    }
+    if data_num=='2e3':
+        save_dict = {
+            'state_dict': model_inter.state_dict(),
+            'N_step': model_inter.N_step,
+            # Include any other attributes here
+        }
+        # save
+        dir_weight_save = f'weights/SREL_rep_ss_inter/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}'
+        os.makedirs(dir_weight_save, exist_ok=True)
+        torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+        
     
-    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
-    
-    rho_avg_stack_batch = model_outputs['rho_avg_stack_batch']
-    rho_avg_stack_avg = torch.sum(rho_avg_stack_batch, dim=0)/batch_size
-    
-    print('rho values = ')
-    for n in range(model_sred_rho.N_step):
-        print(f'{rho_avg_stack_avg[n].item():.4f}')
+        
+    # record the time that is finished
+    print(f'finished time: {current_time}')
     
 if __name__ == "__main__":
-    main()
+    
+    learning_rate = 1e-4
+    main(learning_rate)
