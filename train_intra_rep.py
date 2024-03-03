@@ -18,7 +18,7 @@ from model.srel_intra_rep import SREL_intra_rep
 from utils.custom_loss_intra import custom_loss_function, sinr_function
 
 # from utils.worst_sinr import worst_sinr_function
-from model.srel_intra_tester import SREL_intra_tester
+from model.srel_intra_rep_tester import SREL_intra_rep_tester
 from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
@@ -36,7 +36,7 @@ def main(N_step):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '2e3'
+    data_num = '1e1'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -154,7 +154,7 @@ def main(N_step):
         
         # Validation phase
         model_intra.eval()  # Set model to evaluation mode
-        model_intra_tester = SREL_intra_tester(constants, model_intra).to(device)
+        model_intra_tester = SREL_intra_rep_tester(constants, model_intra).to(device)
         model_intra_tester.device = device
         
         total_val_loss = 0.0
