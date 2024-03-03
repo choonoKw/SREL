@@ -37,7 +37,7 @@ def main(N_step):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '2e3'
+    data_num = '1e1'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -66,7 +66,7 @@ def main(N_step):
     # N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra_rep(constants)
-    model_intra.apply(init_weights)
+    # model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
     learning_rate = 1e-5
@@ -75,20 +75,17 @@ def main(N_step):
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-7,
-        'lambda_sinr': 1e-3,
-    }    
+        'lambda_eta': 1e-5,
+        'lambda_sinr': 1e-2,
+    }  
     ###############################################################
     # for results
     # Get the current time
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra_rep/data{data_num}/Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_{current_time}'
+    log_dir = f'runs/SREL_intra_rep/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_batch{batch_size:02d}'
     writer = SummaryWriter(log_dir)
-    
-    dir_weight_save = f'weights/SREL_intra_rep/data{data_num}/Nstep{N_step:02d}_data{data_num}_lr_1e{-int(np.log10(learning_rate)):01d}_{current_time}'
-    os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -190,11 +187,10 @@ def main(N_step):
                     #s_stack_batch = model_outputs['s_stack_batch']
                     #s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
                     #sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
-                s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M)
-                s_optimal_batch = s_stack_batch[:,-1,:]
-                sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
-                    
-                sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
+            
+            s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M)
+            s_optimal_batch = s_stack_batch[:,-1,:]
+            sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
                     
         average_val_loss = total_val_loss / len(test_loader) / model_intra.M
         validation_losses.append(average_val_loss)
@@ -228,14 +224,17 @@ def main(N_step):
     
     
     # save model's information
-    save_dict = {
-        'state_dict': model_intra.state_dict(),
-        'N_step': model_intra.N_step,
-        # Include any other attributes here
-    }
-    # dir_dict_save = f'weights/SREL_intra_rep/Nstep{N_step:02d}_data{data_num}_{current_time}'
-    # os.makedirs(dir_dict_save, exist_ok=True)
-    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    if data_num=='2e3':
+        # save model's information
+        save_dict = {
+            'state_dict': model_intra.state_dict(),
+            'N_step': model_intra.N_step,
+            # Include any other attributes here
+        }
+        # save
+        dir_weight_save = f'weights/SREL_intra_rep_rho/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}'
+        os.makedirs(dir_weight_save, exist_ok=True)
+        torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
 def init_weights(m):
     if isinstance(m, nn.Linear):
