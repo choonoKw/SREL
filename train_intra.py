@@ -21,11 +21,15 @@ from model.srel_intra import SREL_intra
 
 from utils.custom_loss_intra import custom_loss_function, sinr_function
 
+from model.srel_intra_tester import SREL_intra_tester
+from utils.worst_sinr import worst_sinr_function
+
 # from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
 # tensorboard --logdir=runs/SREL --reload_interval 5
 # tensorboard --logdir=runs/SREL_intra
+# python3 -m tensorboard.main
 from visualization.plotting import plot_losses # result plot
 
 import datetime
@@ -34,7 +38,7 @@ import os
 
 import torch.nn as nn
 
-def main():
+def main(N_step):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -65,7 +69,7 @@ def main():
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 5
+    #N_step = 10
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
     #model_intra.apply(init_weights)
@@ -76,7 +80,7 @@ def main():
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
-    lambda_eta = 1e-6
+    lambda_eta = 1e-5 # 240302-214600: 1e-6->1e-5
     lambda_sinr = 1e-2
     hyperparameters = {
         'lambda_eta': lambda_eta,
@@ -161,6 +165,8 @@ def main():
         
         # Validation phase
         model_intra.eval()  # Set model to evaluation mode
+        model_intra_tester = SREL_intra_tester(constants, model_intra).to(device)
+        model_intra_tester.device = device
         
         total_val_loss = 0.0
         sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
@@ -188,13 +194,17 @@ def main():
                     # calculate loss                            
                     val_loss = custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs)
                     total_val_loss += val_loss.item()
-                
-                    s_stack_batch = model_outputs['s_stack_batch']
-                    s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
-                    s_optimal_batch = s_optimal_batch.to(device)
-                    sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
                     
-                sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
+                s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M)
+                s_optimal_batch = s_stack_batch[:,-1,:]
+                sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                
+                    #s_stack_batch = model_outputs['s_stack_batch']
+                    #s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
+                    #s_optimal_batch = s_optimal_batch.to(device)
+                    #sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
+                    
+                #sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
                     
         average_val_loss = total_val_loss / len(test_loader) / model_intra.M
         validation_losses.append(average_val_loss)
@@ -207,9 +217,9 @@ def main():
         
         
         average_worst_sinr_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
-        print(f'Epoch [{epoch+1}/{num_epochs}], '
-              # f'Train Loss = {average_train_loss:.4f}, '
-              f'average_worst_sinr = {average_worst_sinr_db:.4f} dB')
+        print(f'Epoch [{epoch+1}/{num_epochs}]', 
+              f'Train Loss = {average_train_loss:.4f}', 
+              f'average_worst_sinr = {average_worst_sinr_db:.2f} dB')
             
         
         
@@ -243,6 +253,7 @@ def main():
     print('rho values = ')
     for n in range(model_intra.N_step):
         print(f'{rho_stack_avg[n].item():.4f}')
+    print(f'finished time: {current_time}')
     
 #def init_weights(m):
 #    if isinstance(m, nn.Linear):
@@ -251,4 +262,8 @@ def main():
 #            torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
-    main()
+    N_step = 5
+    main(N_step)
+    
+    N_step = 10
+    main(N_step)
