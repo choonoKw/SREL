@@ -36,7 +36,11 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
+<<<<<<< HEAD
     data_num = '2e3'
+=======
+    data_num = '1e2'
+>>>>>>> 89d673c4eddef9be82d6b8a204e01de46a4669a0
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
