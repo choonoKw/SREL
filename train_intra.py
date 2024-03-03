@@ -73,14 +73,14 @@ def main(N_step):
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
     #model_intra.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     learning_rate=1e-3
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
-    lambda_eta = 1e-5 # 240302-214600: 1e-6->1e-5
+    lambda_eta = 1e-5 
     lambda_sinr = 1e-2
     hyperparameters = {
         'lambda_eta': lambda_eta,
@@ -92,10 +92,10 @@ def main(N_step):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra/data{data_num}/Nstep{N_step:02d}_batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}_{current_time}'
+    log_dir = f'runs/SREL_intra/data{data_num}/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra/data{data_num}/Nstep{N_step:02d}_{current_time}'
+    dir_weight_save = f'weights/SREL_intra/{current_time}_data{data_num}/Nstep{N_step:02d}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -245,14 +245,14 @@ def main(N_step):
     }
     # dir_dict_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
     # os.makedirs(dir_dict_save, exist_ok=True)
-    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    # torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
     rho_stack_batch = model_outputs['rho_stack_batch']
     rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
     
     print('rho values = ')
     for n in range(model_intra.N_step):
-        print(f'{rho_stack_avg[n].item():.4f}')
+        print(f'{rho_stack_avg[n].item():}')
     print(f'finished time: {current_time}')
     
 #def init_weights(m):
