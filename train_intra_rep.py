@@ -7,6 +7,7 @@ Created on Wed Feb 28 21:40:10 2024
 
 import torch
 import torch.optim as optim
+import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -36,7 +37,7 @@ def main(N_step):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -68,7 +69,9 @@ def main(N_step):
     model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
-    optimizer = optim.Adam(model_intra.parameters(), lr=0.0001)
+    learning_rate = 1e-5
+    print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
+    optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
     hyperparameters = {
@@ -81,10 +84,10 @@ def main(N_step):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra_rep/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
+    log_dir = f'runs/SREL_intra_rep/data{data_num}/Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_{current_time}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra_rep/Nstep{N_step:02d}_data{data_num}_{current_time}'
+    dir_weight_save = f'weights/SREL_intra_rep/data{data_num}/Nstep{N_step:02d}_data{data_num}_lr_1e{-int(np.log10(learning_rate)):01d}_{current_time}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
