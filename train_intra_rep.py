@@ -32,11 +32,11 @@ import os
 
 import torch.nn as nn
 
-def main():
+def main(N_step):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -62,7 +62,7 @@ def main():
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 5
+    # N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra_rep(constants)
     model_intra.apply(init_weights)
@@ -241,4 +241,8 @@ def init_weights(m):
             torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
-    main()
+    N_step = 5	
+    main(N_step)
+    
+    N_step = 10	
+    main(N_step)
