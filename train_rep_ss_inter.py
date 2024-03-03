@@ -86,7 +86,7 @@ def main(learning_rate):
     ###############################################################
     ## Control Panel
     ###############################################################
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     # learning_rate=1e-5
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
