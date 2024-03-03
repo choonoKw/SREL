@@ -36,7 +36,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -49,7 +49,7 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    batch_size = 20
+    batch_size = 10
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
@@ -66,7 +66,7 @@ def main():
     N_step = 10
     constants['N_step'] = N_step
     model_sred_rho = SRED_rho(constants)
-    #model_intra.apply(init_weights)
+#    model_sred_rho.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
     learning_rate=1e-5
@@ -202,7 +202,6 @@ def main():
     
     plot_losses(training_losses, validation_losses)
     
-    
     # save model's information
     save_dict = {
         'state_dict': model_sred_rho.state_dict(),
@@ -218,6 +217,14 @@ def main():
     print('rho values = ')
     for n in range(model_sred_rho.N_step):
         print(f'{rho_avg_stack_avg[n].item():.4f}')
+        
+#def init_weights(m):
+#    if isinstance(m, nn.Linear):
+#        torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+#        if m.bias is not None:
+#            torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
     main()
+    
+
