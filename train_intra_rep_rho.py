@@ -33,7 +33,7 @@ import os
 
 import torch.nn as nn
 
-def main(N_step):
+def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -50,8 +50,9 @@ def main(N_step):
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=2, shuffle=False)
+    # batch_size = 20
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # loading constant
     constants['Ly'] = Ly
@@ -63,20 +64,20 @@ def main(N_step):
     ## Control Panel
     ###############################################################
     # Initialize model
-    # N_step = 5
+    N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra_rep_rho(constants)
     # model_intra.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
-    learning_rate = 1e-3
+    learning_rate = 1e-4
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
     hyperparameters = {
         'lambda_eta': 1e-5,
-        'lambda_sinr': 1e-3,
+        'lambda_sinr': 1e-2,
     }    
     ###############################################################
     # for results
@@ -84,11 +85,10 @@ def main(N_step):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra_rep_rho/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}'
+    log_dir = f'runs/SREL_intra_rep_rho/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_batch{batch_size:02d}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra_rep_rho/data{data_num}/{current_time}_Nstep{N_step:02d}_data{data_num}_lr_1e{-int(np.log10(learning_rate)):01d}'
-    os.makedirs(dir_weight_save, exist_ok=True)
+    
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -227,15 +227,18 @@ def main(N_step):
     
     
     
-    # save model's information
-    save_dict = {
-        'state_dict': model_intra.state_dict(),
-        'N_step': model_intra.N_step,
-        # Include any other attributes here
-    }
-    # dir_dict_save = f'weights/SREL_intra_rep/Nstep{N_step:02d}_data{data_num}_{current_time}'
-    # os.makedirs(dir_dict_save, exist_ok=True)
-    #torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    if data_num=='2e3':
+        # save model's information
+        save_dict = {
+            'state_dict': model_intra.state_dict(),
+            'N_step': model_intra.N_step,
+            # Include any other attributes here
+        }
+        # save
+        dir_weight_save = f'weights/SREL_intra_rep_rho/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}'
+        os.makedirs(dir_weight_save, exist_ok=True)
+        torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    
     rho_stack_batch = model_outputs['rho_stack_batch']
     rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
     print('rho values = ')
@@ -250,8 +253,12 @@ def init_weights(m):
             torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
-    N_step = 5	
-    main(N_step)
     
-    N_step = 10	
-    main(N_step)
+    batch_size = 30	
+    main(batch_size)
+    
+    batch_size = 40	
+    main(batch_size)
+    
+    batch_size = 50
+    main(batch_size)
