@@ -66,16 +66,16 @@ def main(N_step):
     # N_step = 5
     constants['N_step'] = N_step
     model_intra = SREL_intra_rep_rho(constants)
-    model_intra.apply(init_weights)
+    # model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
-    learning_rate = 1e-5
+    learning_rate = 1e-3
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-7,
+        'lambda_eta': 1e-5,
         'lambda_sinr': 1e-3,
     }    
     ###############################################################
@@ -84,10 +84,10 @@ def main(N_step):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_intra_rep_rho/data{data_num}/Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_{current_time}'
+    log_dir = f'runs/SREL_intra_rep_rho/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra_rep_rho/data{data_num}/Nstep{N_step:02d}_data{data_num}_lr_1e{-int(np.log10(learning_rate)):01d}_{current_time}'
+    dir_weight_save = f'weights/SREL_intra_rep_rho/data{data_num}/{current_time}_Nstep{N_step:02d}_data{data_num}_lr_1e{-int(np.log10(learning_rate)):01d}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -194,7 +194,7 @@ def main(N_step):
                 s_optimal_batch = s_stack_batch[:,-1,:]
                 sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
                     
-                sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
+                #sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
                     
         average_val_loss = total_val_loss / len(test_loader) / model_intra.M
         validation_losses.append(average_val_loss)
@@ -240,7 +240,7 @@ def main(N_step):
     rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
     print('rho values = ')
     for n in range(model_intra.N_step):
-        print(f'{rho_stack_avg[n].item():.4f}')
+        print(f'{rho_stack_avg[n].item()}')
     print(f'finished time: {current_time}')
     
 def init_weights(m):
