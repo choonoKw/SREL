@@ -19,7 +19,7 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
 from model.srel_intra import SREL_intra
 
-from utils.custom_loss_intra import custom_loss_function, sinr_function
+from utils.custom_loss_intra import custom_loss_function
 
 from model.srel_intra_tester import SREL_intra_tester
 from utils.worst_sinr import worst_sinr_function
@@ -36,7 +36,7 @@ import datetime
 import time
 import os
 
-import torch.nn as nn
+# import torch.nn as nn
 
 def main(N_step):
     # Load dataset
@@ -73,7 +73,7 @@ def main(N_step):
     constants['N_step'] = N_step
     model_intra = SREL_intra(constants)
     #model_intra.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     learning_rate=1e-3
     print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
@@ -95,8 +95,7 @@ def main(N_step):
     log_dir = f'runs/SREL_intra/data{data_num}/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_eta_1e{-int(np.log10(lambda_eta)):01d}'
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SREL_intra/{current_time}_data{data_num}/Nstep{N_step:02d}'
-    os.makedirs(dir_weight_save, exist_ok=True)
+    
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -181,7 +180,7 @@ def main(N_step):
                 y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
                 
                 batch_size = phi_batch.size(0)
-                sinr_M_batch = torch.empty(batch_size,constants['M'])
+                # sinr_M_batch = torch.empty(batch_size,constants['M'])
                 
                 # sinr_M = torch.empty(model_intra.M)
                 for m, (G_batch, H_batch, w_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
@@ -243,9 +242,9 @@ def main(N_step):
         'N_step': model_intra.N_step,
         # Include any other attributes here
     }
-    # dir_dict_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}'
-    # os.makedirs(dir_dict_save, exist_ok=True)
-    # torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    dir_weight_save = f'weights/SREL_intra/Nstep{N_step:02d}_data{data_num}_{current_time}_sinr_{average_worst_sinr_db:.2f}dB'
+    os.makedirs(dir_weight_save, exist_ok=True)
+    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
     rho_stack_batch = model_outputs['rho_stack_batch']
     rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
@@ -265,5 +264,5 @@ if __name__ == "__main__":
     N_step = 5
     main(N_step)
     
-    N_step = 10
-    main(N_step)
+    # N_step = 10
+    # main(N_step)
