@@ -67,7 +67,8 @@ def main(learning_rate):
     
     # Load the bundled dictionary
     dir_dict_saved = 'weights/SREL_rep_rho_intra/20240303-125219_Nstep05_batch10'
-    loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), map_location=device)
+    loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
+                             map_location=device)
     N_step = loaded_dict['N_step']
     constants['N_step'] = N_step
     
@@ -104,7 +105,9 @@ def main(learning_rate):
     
     # Create a unique directory name using the current time and the N_step value
     # log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
-    dir_log =f'runs/SREL_rep_ss_inter/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_batch{batch_size:02d}'
+    dir_log =(f'runs/SREL_rep_ss_inter/data{data_num}/{current_time}'
+              f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
+              f'_lr_1e{-int(np.log10(learning_rate)):01d}')
     writer = SummaryWriter(dir_log)
     #os.makedirs(dir_weight_save, exist_ok=True)
     
@@ -152,7 +155,8 @@ def main(learning_rate):
             
             # calculate loss            
             s_stack_batch = model_outputs['s_stack_batch']
-            loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
+            loss = custom_loss_function(
+                constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
             
             loss.backward()
             optimizer.step()
@@ -192,12 +196,14 @@ def main(learning_rate):
                 
                 s_stack_batch = model_outputs['s_stack_batch']
                 
-                val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
+                val_loss = custom_loss_function(
+                    constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
                 total_val_loss += val_loss.item()
                 
                 s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
                 
-                sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                sum_of_worst_sinr_avg += worst_sinr_function(
+                    constants, s_optimal_batch, G_M_batch, H_M_batch)
                 
         average_val_loss = total_val_loss / len(test_loader) / model_inter.M
         validation_losses.append(average_val_loss)
@@ -206,7 +212,8 @@ def main(learning_rate):
         writer.add_scalar('Loss/Testing', average_val_loss, epoch)
         writer.flush()
         
-        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
+        # Compute the worst-case sinr values in dB
+        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  
         print(f'Epoch [{epoch+1}/{num_epochs}], '
               # f'Train Loss = {average_train_loss:.4f}, '
               f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
@@ -236,12 +243,15 @@ def main(learning_rate):
     # save model's information
     if data_num=='2e3':
         save_dict = {
-            'state_dict': model_inter.state_dict(),
+            'intra_state_dict': model_intra.state_dict(),
+            'inter_state_dict': model_inter.state_dict(),
             'N_step': model_inter.N_step,
             # Include any other attributes here
         }
         # save
-        dir_weight_save = f'weights/SREL_rep_ss_inter/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}'
+        dir_weight_save = (f'weights/SREL_rep_ss_inter/{current_time}_'
+                           f'Nstep{N_step:02d}_batch{batch_size:02d}'
+                           f'_sinr_{worst_sinr_avg_db:.2f}dB')
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
         
