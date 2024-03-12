@@ -16,7 +16,7 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
 from model.SREL_rep_rho_intra import SREL_rep_rho_intra
 
-from utils.custom_loss_intra import custom_loss_function, sinr_function
+from utils.custom_loss_intra import custom_loss_function
 
 # from utils.worst_sinr import worst_sinr_function
 from model.SREL_rep_rho_intra_tester import SREL_rep_rho_intra_tester
@@ -85,7 +85,11 @@ def main(batch_size):
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SREL_rep_rho_intra/data{data_num}/{current_time}_Nstep{constants["N_step"]:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_batch{batch_size:02d}'
+    log_dir = (
+        f'runs/SREL_rep_rho_intra/data{data_num}/{current_time}'
+        f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
+        f'_lr_1e{-int(np.log10(learning_rate)):01d}'
+    )
     writer = SummaryWriter(log_dir)
     
     
@@ -122,7 +126,8 @@ def main(batch_size):
             
             for m, (G_batch, H_batch, w_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
                                                     torch.unbind(H_M_batch, dim=3),
-                                                    torch.unbind(w_M_batch, dim=2))):
+                                                    torch.unbind(w_M_batch, dim=2))
+                                                    ):
                 y = y_M[:,m]
                 
                 model_outputs = model_intra(phi_batch, w_batch, y)
@@ -135,7 +140,8 @@ def main(batch_size):
                 #         print(f"{name}: No grad")
                 
                 # calculate loss            
-                loss = custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs)
+                loss = custom_loss_function(
+                    constants, G_batch, H_batch, hyperparameters, model_outputs)
             
                 loss.backward()
                 optimizer.step()
@@ -173,18 +179,20 @@ def main(batch_size):
                 y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
                 
                 batch_size = phi_batch.size(0)
-                sinr_M_batch = torch.empty(batch_size,constants['M'])
+                # sinr_M_batch = torch.empty(batch_size,constants['M'])
                 
                 # sinr_M = torch.empty(model_intra.M)
                 for m, (G_batch, H_batch, w_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
                                                         torch.unbind(H_M_batch, dim=3),
-                                                        torch.unbind(w_M_batch, dim=2))):
+                                                        torch.unbind(w_M_batch, dim=2))
+                                                        ):
                     y = y_M[:,m]
                     
                     model_outputs = model_intra(phi_batch, w_batch, y)
                     
                     # calculate loss                            
-                    val_loss = custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs)
+                    val_loss = custom_loss_function(
+                        constants, G_batch, H_batch, hyperparameters, model_outputs)
                     total_val_loss += val_loss.item()
                 
                     #s_stack_batch = model_outputs['s_stack_batch']
@@ -192,7 +200,8 @@ def main(batch_size):
                     #sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
                 s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M)
                 s_optimal_batch = s_stack_batch[:,-1,:]
-                sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                sum_of_worst_sinr_avg += worst_sinr_function(
+                    constants, s_optimal_batch, G_M_batch, H_M_batch)
                     
                 #sum_of_worst_sinr_avg += torch.sum(torch.min(sinr_M_batch, dim=1).values)/batch_size
                     
@@ -235,7 +244,11 @@ def main(batch_size):
             # Include any other attributes here
         }
         # save
-        dir_weight_save = f'weights/SREL_rep_rho_intra/{current_time}_Nstep{N_step:02d}_batch{batch_size:02d}'
+        dir_weight_save = (
+            f'weights/SREL_rep_rho_intra/{current_time}'
+            f'_Nstep{N_step:02d}_batch{batch_size:02d}'
+            f'_sinr_{average_worst_sinr_db:.2f}dB'
+        )
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
