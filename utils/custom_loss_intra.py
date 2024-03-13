@@ -23,7 +23,7 @@ def regularizer_eta(constants, G, H, s, eta):
     Hs = torch.matmul(H, s)  # H*s
         
     # Calculating eta_tilde using torch.vdot
-    eta_tilde = 2 / (sGs ** 2) * torch.imag((sHs * Gs - sGs * Hs) * torch.conj(s))
+    eta_tilde = 2 / (sHs ** 2) * torch.imag((sHs * Gs - sGs * Hs) * torch.conj(s))
         
     # Average the loss over the batch
     return torch.norm(eta_tilde - eta) ** 2
@@ -33,7 +33,7 @@ def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_out
     s_stack_batch = model_outputs['s_stack_batch']
     s_stack_batch = s_stack_batch.to(G_batch.device)
     eta_stack_batch = model_outputs['eta_stack_batch']
-    eta_stack_batch = eta_stack_batch.to(G_batch.device)
+    eta_stack_batch = eta_stack_batch.to (G_batch.device)
     batch_size = s_stack_batch.size(0)
     
     loss_sum = 0.0
