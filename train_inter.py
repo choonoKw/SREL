@@ -36,7 +36,7 @@ def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '2e3'
+    data_num = '1e1'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     # Split dataset into training and validation
@@ -48,7 +48,7 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    batch_size = 20
+    batch_size = 10
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
