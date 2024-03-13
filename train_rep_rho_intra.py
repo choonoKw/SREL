@@ -71,7 +71,7 @@ def main(batch_size):
     num_epochs = 50
     # Initialize the optimizer
     learning_rate = 1e-4
-    print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
+    print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
@@ -88,7 +88,7 @@ def main(batch_size):
     log_dir = (
         f'runs/SREL_rep_rho_intra/data{data_num}/{current_time}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
-        f'_lr_1e{-int(np.log10(learning_rate)):01d}'
+        f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
     

@@ -90,7 +90,7 @@ def main(learning_rate):
     num_epochs = 10
     # Initialize the optimizer
     # learning_rate=1e-5
-    print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
+    print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_inter.parameters(), lr=learning_rate)
     
     # loss setting
@@ -107,7 +107,7 @@ def main(learning_rate):
     # log_dir = f'runs/SREL_inter/Nstep{constants["N_step"]:02d}_data{data_num}_{current_time}'
     dir_log =(f'runs/SREL_rep_ss_inter/data{data_num}/{current_time}'
               f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
-              f'_lr_1e{-int(np.log10(learning_rate)):01d}')
+              f'_lr_{learning_rate:.0e}')
     writer = SummaryWriter(dir_log)
     #os.makedirs(dir_weight_save, exist_ok=True)
     
