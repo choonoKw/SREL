@@ -1,5 +1,6 @@
 weights/
 runs/
+data/
 *.ini
 *.pyc
 *.xml
