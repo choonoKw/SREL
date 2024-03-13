@@ -30,17 +30,13 @@ import datetime
 import time
 import os
 
-import torch.nn as nn
+# import torch.nn as nn
 
 def main():
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-<<<<<<< HEAD
-    data_num = '2e3'
-=======
     data_num = '1e2'
->>>>>>> 89d673c4eddef9be82d6b8a204e01de46a4669a0
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -73,15 +69,13 @@ def main():
 #    model_sred_rho.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
-    learning_rate=1e-5
-    print(f'learning_rate=1e{int(np.log10(learning_rate)):01d}')
+    learning_rate=1e-3
+    print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_sred_rho.parameters(), lr=learning_rate)
     
     # loss setting
-    lambda_eta = 1e-6
     lambda_sinr = 1e-2
     hyperparameters = {
-        'lambda_eta': lambda_eta,
         'lambda_sinr': lambda_sinr,
     }    
     ###############################################################
@@ -90,7 +84,11 @@ def main():
     current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
-    log_dir = f'runs/SRED_rho/data{data_num}/Nstep{N_step:02d}_batch{batch_size:02d}_lr_1e{-int(np.log10(learning_rate)):01d}_sinr_1e{-int(np.log10(lambda_sinr)):01d}_{current_time}'
+    log_dir = (
+        f'runs/SRED_rho/data{data_num}/{current_time}'
+        f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
+        f'_lr_{learning_rate:.0e}'
+    )
     writer = SummaryWriter(log_dir)
     
     dir_weight_save = f'weights/SRED_rho/data{data_num}/Nstep{N_step:02d}_{current_time}'
@@ -165,8 +163,6 @@ def main():
                 w_M_batch = w_M_batch.to(device)
                 y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
                 
-                # Perform training steps
-                optimizer.zero_grad()
                 
                 model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
                 
@@ -191,7 +187,14 @@ def main():
               # f'Train Loss = {average_train_loss:.4f}, '
               f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
         
-            
+        # validation of rho values
+        rho_M_stack_batch = model_outputs['rho_M_stack_batch']
+        rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
+        print('rho values = ')
+        for n in range(model_sred_rho.N_step):
+            for m in range(model_sred_rho.M):
+                print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
+            print('')
         
         
     # End time
@@ -206,27 +209,29 @@ def main():
     
     plot_losses(training_losses, validation_losses)
     
-    # save model's information
-    save_dict = {
-        'state_dict': model_sred_rho.state_dict(),
-        'N_step': model_sred_rho.N_step,
-        # Include any other attributes here
-    }
+    if data_num=='2e3':
+        # save model's information
+        save_dict = {
+            'state_dict': model_sred_rho.state_dict(),
+            'N_step': model_sred_rho.N_step,
+            # Include any other attributes here
+        }
+        # save
+        dir_weight_save = (
+            f'weights/SRED_rho/{current_time}'
+            f'_Nstep{N_step:02d}_batch{batch_size:02d}'
+            f'_sinr_{worst_sinr_avg_db:.2f}dB'
+        )
+        os.makedirs(dir_weight_save, exist_ok=True)
+        torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
-    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
-    
-    rho_avg_stack_batch = model_outputs['rho_avg_stack_batch']
-    rho_avg_stack_avg = torch.sum(rho_avg_stack_batch, dim=0)/batch_size
-    
-    print('rho values = ')
-    for n in range(model_sred_rho.N_step):
-        print(f'{rho_avg_stack_avg[n].item():.4f}')
-        
-#def init_weights(m):
-#    if isinstance(m, nn.Linear):
-#        torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
-#        if m.bias is not None:
-#            torch.nn.init.constant_(m.bias, 0)
+    # # validate the values of rho
+    # rho_stack_batch = model_outputs['rho_stack_batch']
+    # rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
+    # print('rho values = ')
+    # for n in range(model_sred_rho.N_step):
+    #     print(f'{rho_stack_avg[n].item()}')
+    # print(f'finished time: {current_time}')
     
 if __name__ == "__main__":
     main()
