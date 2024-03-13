@@ -34,8 +34,12 @@ def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_sta
             
                 f_sinr += reciprocal_sinr(constants, G, H, s)
         
+        # compute the f_sinr with the output s
         s = s_stack[-1]
-        f_sinr_opt = reciprocal_sinr(constants, G, H, s)
+        f_sinr_opt = 0.0
+        for m, (G, H) in enumerate(zip(torch.unbind(G_M, dim=2),
+                                                torch.unbind(H_M, dim=2))):
+            f_sinr_opt += reciprocal_sinr(constants, G, H, s)
     
         loss = f_sinr_opt + hyperparameters['lambda_sinr']*f_sinr/(N_step-1)
             
