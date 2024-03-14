@@ -55,8 +55,8 @@ class SRED_rho(nn.Module):
                     w = w_M[:,m]
                     y = y_M[:,m]
                     
-                    x = standardize(s, w, y)
-                    # x = torch.cat((s.real, s.imag, w.real, w.imag, y), dim=0)
+                    # x = standardize(s, w, y)
+                    x = torch.cat((s.real, s.imag, w.real, w.imag, y), dim=0)
                     
                     
                     sGs = torch.vdot(s, torch.matmul(G, s))  # Equivalent to s'*G*s in MATLAB
