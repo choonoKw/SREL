@@ -32,11 +32,11 @@ import os
 
 # import torch.nn as nn
 
-def main():
+def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e2'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -49,7 +49,7 @@ def main():
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    batch_size = 10
+    # batch_size = 50
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
@@ -100,6 +100,8 @@ def main():
     print(f"Using device: {device}")
     model_sred_rho.to(device)
     model_sred_rho.device = device
+    
+    
     
     # List to store average loss per epoch
     training_losses = []
@@ -234,6 +236,13 @@ def main():
     # print(f'finished time: {current_time}')
     
 if __name__ == "__main__":
-    main()
+    batch_size = 10
+    main(batch_size)
+    
+    batch_size = 30
+    main(batch_size)
+    
+    batch_size = 50
+    main(batch_size)
     
 
