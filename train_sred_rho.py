@@ -36,7 +36,7 @@ def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '2e3'
+    data_num = '1e2'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -206,6 +206,34 @@ def main(batch_size):
     duration = end_time - start_time
     
     print(f"Training completed in: {duration:.2f} seconds")
+    
+    # sinr values w.r.t. update steps
+    sum_of_worst_sinr_avg_list = torch.zeros(N_step).to(device)
+    for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
+        # s_batch = modulus * torch.exp(1j * phi_batch)
+        phi_batch = phi_batch.to(device)
+        G_M_batch = G_M_batch.to(device)
+        H_M_batch = H_M_batch.to(device)
+        w_M_batch = w_M_batch.to(device)
+        y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
+        
+        
+        model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+        
+        s_stack_batch = model_outputs['s_stack_batch']
+        
+        val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
+        total_val_loss += val_loss.item()
+        
+        for idx_step in range (N_step):
+            s_optimal_batch = s_stack_batch[:,idx_step,:].squeeze()        
+            sum_of_worst_sinr_avg_list[idx_step] += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+            
+    worst_sinr_avg_list_dB = 10*torch.log10(sum_of_worst_sinr_avg_list/ len(test_loader))
+    print(' worst_sinr [dB]')
+    for idx_step in range(N_step):
+        print(f'Update step {idx_step:02d}, {worst_sinr_avg_list_dB[idx_step].item():.4f}')
+    
         
     # After completing all epochs, plot the training loss
     
