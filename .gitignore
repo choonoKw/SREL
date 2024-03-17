@@ -7,3 +7,4 @@ data/
 *.iml
 *.bak
 *.1
+.ipynb_checkpoints
