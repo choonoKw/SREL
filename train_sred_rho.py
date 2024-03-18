@@ -7,7 +7,7 @@ Created on Fri Mar  1 14:49:41 2024
 
 import torch
 import torch.optim as optim
-import numpy as np
+# import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -63,7 +63,7 @@ def main(batch_size):
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 10
+    N_step = 5
     constants['N_step'] = N_step
     model_sred_rho = SRED_rho(constants)
 #    model_sred_rho.apply(init_weights)
@@ -132,7 +132,8 @@ def main(batch_size):
             model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
             
             s_stack_batch = model_outputs['s_stack_batch']
-            loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
+            loss = custom_loss_function(
+                constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
             
             loss.backward()
             optimizer.step()
@@ -172,7 +173,8 @@ def main(batch_size):
                 
                 s_stack_batch = model_outputs['s_stack_batch']
                 
-                val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
+                val_loss = custom_loss_function(
+                    constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
                 total_val_loss += val_loss.item()
                 
                 s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
