@@ -14,12 +14,12 @@ from torch.utils.data import DataLoader, Subset
 from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
-from model.SREL_rep_rho_intra import SREL_rep_rho_intra
+from model.srel_rep_rho_intra import SREL_rep_rho_intra
 
 from utils.custom_loss_intra import custom_loss_function
 
 # from utils.worst_sinr import worst_sinr_function
-from model.SREL_rep_rho_intra_tester import SREL_rep_rho_intra_tester
+from model.srel_rep_rho_intra_tester import SREL_intra_rep_tester
 from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
@@ -37,7 +37,7 @@ def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '2e3'
+    data_num = '1e1'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -68,7 +68,7 @@ def main(batch_size):
     constants['N_step'] = N_step
     model_intra = SREL_rep_rho_intra(constants)
     # model_intra.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     learning_rate = 1e-4
     print(f'learning_rate={learning_rate:.0e}')
@@ -76,7 +76,7 @@ def main(batch_size):
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-5,
+        'lambda_eta': 1e-6,
         'lambda_sinr': 1e-2,
     }    
     ###############################################################
@@ -163,7 +163,7 @@ def main(batch_size):
         
         # Validation phase
         model_intra.eval()  # Set model to evaluation mode
-        model_intra_tester = SREL_rep_rho_intra_tester(constants, model_intra).to(device)
+        model_intra_tester = SREL_intra_rep_tester(constants, model_intra).to(device)
         model_intra_tester.device = device
         
         total_val_loss = 0.0
@@ -236,7 +236,7 @@ def main(batch_size):
     
     
     
-    if data_num=='2e3':
+    if data_num=='1e1':
         # save model's information
         save_dict = {
             'state_dict': model_intra.state_dict(),
@@ -255,18 +255,32 @@ def main(batch_size):
     # validate the values of rho
     rho_stack_batch = model_outputs['rho_stack_batch']
     rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
-    print('rho values = ')
+    print('\n','rho values = ')
     for n in range(model_intra.N_step):
-        print(f'{rho_stack_avg[n].item()}')
+        print(f'{rho_stack_avg[n].item():.4f}')
     print(f'finished time: {current_time}')
     
-def init_weights(m):
-    if isinstance(m, nn.Linear):
-        torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
-        if m.bias is not None:
-            torch.nn.init.constant_(m.bias, 0)
+    # SINR values for each step
+    # sinr_list = torch.zeros(N_step)
+    for update_step in range(N_step+1):
+        s_batch = s_stack_batch[:,-1,:]
+        # sinr_list[update_step]= worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
+        sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
+        print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
+    
+    
+# def init_weights(m):
+#     if isinstance(m, nn.Linear):
+#         torch.nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
+#         if m.bias is not None:
+#             torch.nn.init.constant_(m.bias, 0)
     
 if __name__ == "__main__":
-    
-    batch_size = 30	
+    batch_size = 10	
     main(batch_size)
+    
+#     batch_size = 30	
+#     main(batch_size)
+    
+#     batch_size = 50	
+#     main(batch_size)

@@ -189,14 +189,7 @@ def main(batch_size):
               # f'Train Loss = {average_train_loss:.4f}, '
               f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
         
-        # validation of rho values
-        rho_M_stack_batch = model_outputs['rho_M_stack_batch']
-        rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
-        print('rho values = ')
-        for n in range(model_sred_rho.N_step):
-            for m in range(model_sred_rho.M):
-                print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
-            print('')
+        
         
         
     # End time
@@ -255,6 +248,22 @@ def main(batch_size):
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
+    # validation of rho values
+    rho_M_stack_batch = model_outputs['rho_M_stack_batch']
+    rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
+    print('rho values = ')
+    for n in range(model_sred_rho.N_step):
+        for m in range(model_sred_rho.M):
+            print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
+        print('')
+        
+    # SINR values for each step
+    for update_step in range(N_step+1):
+        s_batch = s_stack_batch[:,-1,:]
+        # sinr_list[update_step]= worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
+        sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
+        print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
+    
     # # validate the values of rho
     # rho_stack_batch = model_outputs['rho_stack_batch']
     # rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
@@ -267,10 +276,10 @@ if __name__ == "__main__":
     batch_size = 10
     main(batch_size)
     
-    batch_size = 30
-    main(batch_size)
+#     batch_size = 30
+#     main(batch_size)
     
-    batch_size = 50
-    main(batch_size)
+#     batch_size = 50
+#     main(batch_size)
     
 
