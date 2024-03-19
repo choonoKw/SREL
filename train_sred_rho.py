@@ -7,7 +7,7 @@ Created on Fri Mar  1 14:49:41 2024
 
 import torch
 import torch.optim as optim
-# import numpy as np
+import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -36,7 +36,7 @@ def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    data_num = '2e3'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -49,7 +49,7 @@ def main(batch_size):
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    # batch_size = 50
+    # batch_size = 10
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
@@ -63,7 +63,7 @@ def main(batch_size):
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 5
+    N_step = 10
     constants['N_step'] = N_step
     model_sred_rho = SRED_rho(constants)
 #    model_sred_rho.apply(init_weights)
@@ -75,7 +75,7 @@ def main(batch_size):
     
     # loss setting
     lambda_sinr = 1e-2
-    lambda_var_rho = 1e-3
+    lambda_var_rho = 1e1
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
         'lambda_var_rho': lambda_var_rho
@@ -83,7 +83,8 @@ def main(batch_size):
     ###############################################################
     # for results
     # Get the current time
-    current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
+    current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') 
+    print(f'current time: {current_time}')
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
@@ -145,7 +146,7 @@ def main(batch_size):
         average_train_loss = total_train_loss / len(train_loader) / model_sred_rho.M
         
         # Log the loss
-        writer.add_scalar('Loss/Training', average_train_loss, epoch)
+        writer.add_scalar('Loss/Training [dB]', 10*np.log10(average_train_loss), epoch)
         # writer.flush()
         
         training_losses.append(average_train_loss)
@@ -185,7 +186,7 @@ def main(batch_size):
         validation_losses.append(average_val_loss)
     
         # Log the loss
-        writer.add_scalar('Loss/Testing', average_val_loss, epoch)
+        writer.add_scalar('Loss/Testing [dB]', 10*np.log10(average_val_loss), epoch)
         writer.flush()
         
         worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
@@ -264,7 +265,6 @@ def main(batch_size):
     # SINR values for each step
     for update_step in range(N_step+1):
         s_batch = s_stack_batch[:,update_step,:]
-        # sinr_list[update_step]= worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
         sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
         print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
     
@@ -278,12 +278,16 @@ def main(batch_size):
     
 if __name__ == "__main__":
     batch_size = 10
+    # lambda_var_rho = 1e1
+    print(f'batch_size = {batch_size}')
     main(batch_size)
     
-#     batch_size = 30
-#     main(batch_size)
+    batch_size = 30
+    # lambda_var_rho = 1e1
+    print(f'batch_size = {batch_size}')
+    main(batch_size)
     
-#     batch_size = 50
-#     main(batch_size)
-    
-
+    batch_size = 50
+    # lambda_var_rho = 1e1
+    print(f'batch_size = {batch_size}')
+    main(batch_size)

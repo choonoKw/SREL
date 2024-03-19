@@ -6,6 +6,7 @@ Created on Thu Feb 22 14:27:10 2024
 """
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 def plot_training_loss(epoch_losses):
 
@@ -21,8 +22,8 @@ def plot_training_loss(epoch_losses):
 def plot_losses(training_losses, validation_losses):
     plt.figure('Loss Plot', figsize=(10, 6))
     plt.clf()  # Clear the current figure
-    plt.plot(training_losses, label='Training Loss')
-    plt.plot(validation_losses, label='Validation Loss')
+    plt.plot(10*np.log10(training_losses), label='Training Loss')
+    plt.plot(10*np.log10(validation_losses), label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title('Loss Over Epochs')
