@@ -37,7 +37,7 @@ class SREL_intra_rep_tester(nn.Module):
                     w = w_M[:,m]
                     y = y_M[:,m]
                     x = torch.cat((s.real, s.imag, w.real, w.imag, y), dim=0)
-                    eta = self.model_intra.est_eta_modules(x)
+                    eta = self.model_intra.est_eta_modules[update_step](x)
                     rho = self.model_intra.est_rho_modules(x)
                     
                     eta_net += rho*eta

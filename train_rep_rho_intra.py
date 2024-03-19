@@ -64,7 +64,7 @@ def main(batch_size):
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 5
+    N_step = 10
     constants['N_step'] = N_step
     model_intra = SREL_rep_rho_intra(constants)
     # model_intra.apply(init_weights)
@@ -263,7 +263,7 @@ def main(batch_size):
     # SINR values for each step
     # sinr_list = torch.zeros(N_step)
     for update_step in range(N_step+1):
-        s_batch = s_stack_batch[:,-1,:]
+        s_batch = s_stack_batch[:,update_step,:]
         # sinr_list[update_step]= worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
         sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
         print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
