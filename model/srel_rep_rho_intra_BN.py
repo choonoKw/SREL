@@ -6,9 +6,7 @@ Created on Wed Feb 28 21:38:34 2024
 """
 
 from model.estimate_eta import Estimate_eta
-from model.estimate_rho import Estimate_rho
-# from model.estimate_rho import Estimate_rho_DO
-# from model.estimate_rho import Estimate_rho_BN
+from model.estimate_rho import Estimate_rho_BN
 import torch
 import torch.nn as nn
 
@@ -27,7 +25,7 @@ class SREL_rep_rho_intra(nn.Module):
             for _ in range(self.N_step)
         ])
         
-        self.est_rho_modules = Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
+        self.est_rho_modules = Estimate_rho_BN(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
         
     def forward(self, phi_batch, w_batch, y):
         batch_size = phi_batch.size(0)

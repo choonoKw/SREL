@@ -14,7 +14,17 @@ from torch.utils.data import DataLoader, Subset
 from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
-from model.sred_rho import SRED_rho
+
+# from model.sred_rho import SRED_rho
+# print('SRED_rho OG.')
+
+# from model.sred_rho_DO import SRED_rho
+# print('SRED_rho with Drop Out (DO)')
+
+from model.sred_rho_BN import SRED_rho
+print('SRED_rho with Batch Normalization (BN)')
+
+
 
 from utils.custom_loss_sred_rho import custom_loss_function
 from utils.worst_sinr import worst_sinr_function
@@ -36,7 +46,7 @@ def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '2e3'
+    data_num = '1e2'
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -67,7 +77,7 @@ def main(batch_size):
     constants['N_step'] = N_step
     model_sred_rho = SRED_rho(constants)
 #    model_sred_rho.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 30
     # Initialize the optimizer
     learning_rate=1e-3
     print(f'learning_rate={learning_rate:.0e}')
@@ -277,17 +287,17 @@ def main(batch_size):
     # print(f'finished time: {current_time}')
     
 if __name__ == "__main__":
-    batch_size = 10
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
+    # batch_size = 10
+    # # lambda_var_rho = 1e1
+    # print(f'batch_size = {batch_size}')
+    # main(batch_size)
     
     batch_size = 30
     # lambda_var_rho = 1e1
     print(f'batch_size = {batch_size}')
     main(batch_size)
     
-    batch_size = 50
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
+    # batch_size = 50
+    # # lambda_var_rho = 1e1
+    # print(f'batch_size = {batch_size}')
+    # main(batch_size)
