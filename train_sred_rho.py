@@ -109,7 +109,6 @@ def main(batch_size):
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #device = torch.device("cpu")
     print(f"Using device: {device}")
     model_sred_rho.to(device)
     model_sred_rho.device = device
