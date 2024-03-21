@@ -7,7 +7,7 @@ Created on Wed Feb 28 21:40:10 2024
 
 import torch
 import torch.optim as optim
-import numpy as np
+# import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -31,13 +31,14 @@ import datetime
 import time
 import os
 
-import torch.nn as nn
+# import torch.nn as nn
 
 def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
     data_num = '1e1'
+    # batch_size = 20
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
     
@@ -50,7 +51,7 @@ def main(batch_size):
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
     
-    # batch_size = 20
+    
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
