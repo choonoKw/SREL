@@ -5,17 +5,19 @@ Created on Thu Feb 22 10:01:46 2024
 @author: jbk5816
 """
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from scipy.io import loadmat
 import torch
 
 class ComplexValuedDataset(Dataset):
     def __init__(self, mat_file, stage=1):
         data = loadmat(mat_file)
+        self.phi_list = torch.tensor(data['phi_list'], dtype=torch.float32)
         self.G_M_list = torch.tensor(data['G_M_list'], dtype=torch.complex64)
         self.H_M_list = torch.tensor(data['H_M_list'], dtype=torch.complex64)
-        self.phi_list = torch.tensor(data['phi_list'], dtype=torch.float32)
         self.w_M_list = torch.tensor(data['w_M_list'], dtype=torch.complex64)
+        
+        self.y_M = torch.tensor(data['y_M'], dtype=torch.float32)
         
         
     def __len__(self):
