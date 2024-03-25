@@ -41,17 +41,19 @@ import datetime
 import time
 import os
 
+from utils.validation import validation
+
 # import torch.nn as nn
 
 def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 2e3
+    data_num = 1e1
     
+    y_M, Ly = load_mapVector('data/data_mapV.mat')
     
     dataset = ComplexValuedDataset(f'data/data_trd_{data_num:.0e}.mat')
-    y_M, Ly = load_mapVector('data/data_mapV.mat')
     
     train_indices, val_indices = train_test_split(
         range(len(dataset)),
@@ -80,7 +82,7 @@ def main(batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_rep_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 30
+    num_epochs = 10
     # Initialize the optimizer
     learning_rate=1e-4
     print(f'learning_rate={learning_rate:.0e}')
@@ -101,13 +103,13 @@ def main(batch_size):
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/SRED_rho/data{data_num}/{current_time}'
+        f'runs/SRED_rho/data{data_num:.0e}/{current_time}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SRED_rho/data{data_num}/Nstep{N_step:02d}_{current_time}'
+    dir_weight_save = f'weights/SRED_rho/data{data_num:.0e}/Nstep{N_step:02d}_{current_time}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -281,20 +283,23 @@ def main(batch_size):
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
-    # validation of rho values
-    rho_M_stack_batch = model_outputs['rho_M_stack_batch']
-    rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
-    print('rho values = ')
-    for n in range(model_sred.N_step):
-        for m in range(model_sred.M):
-            print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
-        print('')
+    # validation
+    validation(constants,model_sred)
+    
+    # # validation of rho values
+    # rho_M_stack_batch = model_outputs['rho_M_stack_batch']
+    # rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
+    # print('rho values = ')
+    # for n in range(model_sred.N_step):
+    #     for m in range(model_sred.M):
+    #         print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
+    #     print('')
         
-    # SINR values for each step
-    for update_step in range(N_step+1):
-        s_batch = s_stack_batch[:,update_step,:]
-        sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
-        print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
+    # # SINR values for each step
+    # for update_step in range(N_step+1):
+    #     s_batch = s_stack_batch[:,update_step,:]
+    #     sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
+    #     print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
     
     # # validate the values of rho
     # rho_stack_batch = model_outputs['rho_stack_batch']
