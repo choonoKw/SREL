@@ -13,11 +13,13 @@ class Estimate_rho(nn.Module):
         super(Estimate_rho, self).__init__()
         # Define layers for estimating step size rho
         self.layers = nn.Sequential(
-            nn.Linear(input_dim, 512),  # Start with a more significant reduction
+            nn.Linear(input_dim, input_dim),  # Start with a more significant reduction
             nn.ReLU(),
-            nn.Linear(512, 128),
+            nn.Linear(input_dim, 512),
             nn.ReLU(),
             # nn.Dropout(0.5),  # Optional: add dropout for regularization
+            nn.Linear(512, 128),
+            nn.ReLU(),
             nn.Linear(128, 32),
             nn.ReLU(),
             nn.Linear(32, output_dim),  # Output dimension matches rho 1
