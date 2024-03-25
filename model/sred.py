@@ -64,11 +64,11 @@ class SRED_rho(nn.Module):
                     x = torch.cat((s.real, s.imag, w.real, w.imag, y), dim=0)
                     
                     
-                    sGs = torch.vdot(s, torch.matmul(G, s))  # Equivalent to s'*G*s in MATLAB
-                    sHs = torch.vdot(s, torch.matmul(H, s))  # Equivalent to s'*H*s in MATLAB
+                    sGs = torch.abs(torch.vdot(s, torch.matmul(G, s)))  # Equivalent to s'*G*s in MATLAB
+                    sHs = torch.abs(torch.vdot(s, torch.matmul(H, s)))  # Equivalent to s'*H*s in MATLAB
                     Gs = torch.matmul(G, s)  # G*s
                     Hs = torch.matmul(H, s)  # H*s
-                    eta = torch.real(2 / (sHs ** 2) * torch.imag((sHs * Gs - sGs * Hs) * torch.conj(s)))
+                    eta = torch.real(2 / (sHs ** 2) * torch.imag( (sHs * Gs - sGs * Hs) * torch.conj(s) ) )
                     
                     
                     rho = self.est_rho_modules[update_step](x)
