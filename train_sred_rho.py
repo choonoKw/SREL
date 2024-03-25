@@ -48,8 +48,8 @@ from utils.validation import validation
 def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
-    y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e1
+    # y_M, Ly = load_mapVector('data/data_mapV.mat')
+    data_num = 1e2
     
     
     # loading constant
@@ -140,7 +140,7 @@ def main(batch_size):
             G_M_batch = G_M_batch.to(device)
             H_M_batch = H_M_batch.to(device)
             w_M_batch = w_M_batch.to(device)
-            y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
+            y_M = dataset.y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
             
             # Perform training steps
             optimizer.zero_grad()
