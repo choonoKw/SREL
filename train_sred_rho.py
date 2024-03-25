@@ -80,15 +80,15 @@ def main(batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_rep_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 30
     # Initialize the optimizer
-    learning_rate=1e-5
+    learning_rate=1e-4
     print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_sred.parameters(), lr=learning_rate)
     
     # loss setting
     lambda_sinr = 1e-2
-    lambda_var_rho = 1e1
+    lambda_var_rho = 0
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
         'lambda_var_rho': lambda_var_rho
@@ -310,7 +310,22 @@ if __name__ == "__main__":
     # print(f'batch_size = {batch_size}')
     # main(batch_size)
     
+    batch_size = 2
+    # lambda_var_rho = 1e1
+    print(f'batch_size = {batch_size}')
+    main(batch_size)
+    
+    batch_size = 5
+    # lambda_var_rho = 1e1
+    print(f'batch_size = {batch_size}')
+    main(batch_size)
+    
     batch_size = 10
+    # lambda_var_rho = 1e1
+    print(f'batch_size = {batch_size}')
+    main(batch_size)
+    
+    batch_size = 15
     # lambda_var_rho = 1e1
     print(f'batch_size = {batch_size}')
     main(batch_size)
