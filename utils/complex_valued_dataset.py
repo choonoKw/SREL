@@ -17,7 +17,6 @@ class ComplexValuedDataset(Dataset):
         self.H_M_list = torch.tensor(data['H_M_list'], dtype=torch.complex64)
         self.w_M_list = torch.tensor(data['w_M_list'], dtype=torch.complex64)
         
-        self.y_M = torch.tensor(data['y_M'], dtype=torch.float32)
         
         
     def __len__(self):
