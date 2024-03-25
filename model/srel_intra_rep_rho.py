@@ -12,9 +12,9 @@ from model.estimate_rho import Estimate_rho
 import torch
 import torch.nn as nn
 
-class SREL_rep_rho_intra(nn.Module):
+class SREL_intra_rep_rho(nn.Module):
     def __init__(self, constants):
-        super(SREL_rep_rho_intra, self).__init__()
+        super(SREL_intra_rep_rho, self).__init__()
         # Unpack constants from the dictionary and store as attributes
         self.M = constants['M']
         self.Ls = constants['Nt']*constants['N']
