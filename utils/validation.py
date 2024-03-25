@@ -49,4 +49,7 @@ def validation(constants,model_val):
         s_batch = s_stack_batch[:,update_step,:]
         sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
         print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
+    sinr_db_opt = sinr_db
+    
+    return sinr_db_opt
             

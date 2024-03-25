@@ -51,22 +51,6 @@ def main(batch_size):
     y_M, Ly = load_mapVector('data/data_mapV.mat')
     data_num = 1e1
     
-    y_M, Ly = load_mapVector('data/data_mapV.mat')
-    
-    dataset = ComplexValuedDataset(f'data/data_trd_{data_num:.0e}.mat')
-    
-    train_indices, val_indices = train_test_split(
-        range(len(dataset)),
-        test_size=0.2,  # 20% for validation
-        random_state=42
-    )
-    train_dataset = Subset(dataset, train_indices)
-    val_dataset = Subset(dataset, val_indices)
-    
-    # batch_size = 10
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    
     
     # loading constant
     constants['Ly'] = 570
@@ -82,9 +66,9 @@ def main(batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_rep_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 24
     # Initialize the optimizer
-    learning_rate=1e-4
+    learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_sred.parameters(), lr=learning_rate)
     
@@ -126,23 +110,25 @@ def main(batch_size):
     
     
     start_time = time.time()
+    
     # Training loop
+    num_case = 24
     for epoch in range(num_epochs):
-        # case_num = epoch % num_case + 1
-        # dataset = TrainingDataSet(f'data/data_trd_{data_num:.0e}_case{case_num:02d}.mat')
+        case_num = epoch % num_case + 1
+        dataset = TrainingDataSet(f'data/{data_num:.0e}/data_trd_{data_num:.0e}_case{case_num:02d}.mat')
         
-        # # Split dataset into training and validation
-        # train_indices, val_indices = train_test_split(
-        #     range(len(dataset)),
-        #     test_size=0.2,  # 20% for validation
-        #     random_state=42
-        # )
-        # train_dataset = Subset(dataset, train_indices)
-        # val_dataset = Subset(dataset, val_indices)
+        # Split dataset into training and validation
+        train_indices, val_indices = train_test_split(
+            range(len(dataset)),
+            test_size=0.2,  # 20% for validation
+            random_state=42
+        )
+        train_dataset = Subset(dataset, train_indices)
+        val_dataset = Subset(dataset, val_indices)
         
-        # # batch_size = 10
-        # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        # test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        # batch_size = 10
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
         
         model_sred.train()  # Set model to training mode
         total_train_loss = 0.0
@@ -162,7 +148,7 @@ def main(batch_size):
             
             model_outputs = model_sred(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
             
-            s_stack_batch = model_outputs['s_stack_batch']
+            # s_stack_batch = model_outputs['s_stack_batch']
             loss = custom_loss_function(
                 constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
             
@@ -188,7 +174,7 @@ def main(batch_size):
         model_sred.eval()  # Set model to evaluation mode
         
         total_val_loss = 0.0
-        sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
+        # sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
         
         with torch.no_grad():  # Disable gradient computation
             for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
@@ -202,15 +188,15 @@ def main(batch_size):
                 
                 model_outputs = model_sred(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
                 
-                s_stack_batch = model_outputs['s_stack_batch']
+                # s_stack_batch = model_outputs['s_stack_batch']
                 
                 val_loss = custom_loss_function(
                     constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
                 total_val_loss += val_loss.item()
                 
-                s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
+                # s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
                 
-                sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                # sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
                     
         average_val_loss = total_val_loss / len(test_loader) / model_sred.M
         validation_losses.append(average_val_loss)
@@ -219,10 +205,12 @@ def main(batch_size):
         writer.add_scalar('Loss/Testing [dB]', 10*np.log10(average_val_loss), epoch)
         writer.flush()
         
-        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
-        print(f'Epoch [{epoch+1}/{num_epochs}], '
+        
+        print(f'Epoch [{epoch+1}/{num_epochs}]')
+        # worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader))  # Compute average loss for the epoch
+        # print(f'Epoch [{epoch+1}/{num_epochs}], '
               # f'Train Loss = {average_train_loss:.4f}, '
-              f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+              # f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
         
         
         
@@ -235,37 +223,10 @@ def main(batch_size):
     
     print(f"Training completed in: {duration:.2f} seconds")
     
-    # sinr values w.r.t. update steps
-#     sum_of_worst_sinr_avg_list = torch.zeros(N_step).to(device)
-#     for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
-#         # s_batch = modulus * torch.exp(1j * phi_batch)
-#         phi_batch = phi_batch.to(device)
-#         G_M_batch = G_M_batch.to(device)
-#         H_M_batch = H_M_batch.to(device)
-#         w_M_batch = w_M_batch.to(device)
-#         y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
-        
-        
-#         model_outputs = model_sred(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
-        
-#         s_stack_batch = model_outputs['s_stack_batch']
-        
-#         val_loss = custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, s_stack_batch)
-#         total_val_loss += val_loss.item()
-        
-#         for idx_step in range (N_step):
-#             s_optimal_batch = s_stack_batch[:,idx_step,:].squeeze()        
-#             sum_of_worst_sinr_avg_list[idx_step] += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
-            
-#     worst_sinr_avg_list_dB = 10*torch.log10(sum_of_worst_sinr_avg_list/ len(test_loader))
-#     print(' worst_sinr [dB]')
-#     for idx_step in range(N_step):
-#         print(f'Update step {idx_step:02d}, {worst_sinr_avg_list_dB[idx_step].item():.4f}')
-    
-        
-    # After completing all epochs, plot the training loss
-    
     plot_losses(training_losses, validation_losses)
+    
+    # validation
+    sinr_db_opt = validation(constants,model_sred)
     
     if data_num=='2e3':
         # save model's information
@@ -278,64 +239,17 @@ def main(batch_size):
         dir_weight_save = (
             f'weights/SRED_rho/{current_time}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{worst_sinr_avg_db:.2f}dB'
+            f'_sinr_{sinr_db_opt:.2f}dB'
         )
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
-    # validation
-    validation(constants,model_sred)
     
-    # # validation of rho values
-    # rho_M_stack_batch = model_outputs['rho_M_stack_batch']
-    # rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
-    # print('rho values = ')
-    # for n in range(model_sred.N_step):
-    #     for m in range(model_sred.M):
-    #         print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
-    #     print('')
-        
-    # # SINR values for each step
-    # for update_step in range(N_step+1):
-    #     s_batch = s_stack_batch[:,update_step,:]
-    #     sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
-    #     print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
     
-    # # validate the values of rho
-    # rho_stack_batch = model_outputs['rho_stack_batch']
-    # rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
-    # print('rho values = ')
-    # for n in range(model_sred.N_step):
-    #     print(f'{rho_stack_avg[n].item()}')
-    # print(f'finished time: {current_time}')
     
 if __name__ == "__main__":
-    # batch_size = 10
-    # # lambda_var_rho = 1e1
-    # print(f'batch_size = {batch_size}')
-    # main(batch_size)
-    
-    batch_size = 2
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
     
     batch_size = 5
     # lambda_var_rho = 1e1
     print(f'batch_size = {batch_size}')
     main(batch_size)
-    
-    batch_size = 10
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
-    
-    batch_size = 15
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
-    
-    # batch_size = 50
-    # # lambda_var_rho = 1e1
-    # print(f'batch_size = {batch_size}')
-    # main(batch_size)
