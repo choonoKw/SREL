@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
 from utils.complex_valued_dataset import ComplexValuedDataset
+from utils.training_dataset import TrainingDataSet
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
 
@@ -21,8 +22,8 @@ from utils.load_mapVector import load_mapVector
 # from model.sred_rho_DO import SRED_rho
 # print('SRED_rho with Drop Out (DO)')
 
-from model.sred_rho_BN import SRED_rho
-print('SRED_rho with Batch Normalization (BN)')
+from model.sred import SRED_rep_rho
+# print('SRED_rho with Batch Normalization (BN)')
 
 
 
@@ -46,11 +47,12 @@ def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e2'
-    dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
+    data_num = 2e3
     
     
-    # Split dataset into training and validation
+    dataset = ComplexValuedDataset(f'data/data_trd_{data_num:.0e}.mat')
+    y_M, Ly = load_mapVector('data/data_mapV.mat')
+    
     train_indices, val_indices = train_test_split(
         range(len(dataset)),
         test_size=0.2,  # 20% for validation
@@ -63,8 +65,9 @@ def main(batch_size):
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
+    
     # loading constant
-    constants['Ly'] = Ly
+    constants['Ly'] = 570
     Nt = constants['Nt']
     N = constants['N']
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
@@ -75,13 +78,13 @@ def main(batch_size):
     # Initialize model
     N_step = 10
     constants['N_step'] = N_step
-    model_sred_rho = SRED_rho(constants)
-#    model_sred_rho.apply(init_weights)
-    num_epochs = 30
+    model_sred = SRED_rep_rho(constants)
+#    model_sred.apply(init_weights)
+    num_epochs = 10
     # Initialize the optimizer
-    learning_rate=1e-3
+    learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
-    optimizer = optim.Adam(model_sred_rho.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model_sred.parameters(), lr=learning_rate)
     
     # loss setting
     lambda_sinr = 1e-2
@@ -110,8 +113,8 @@ def main(batch_size):
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
-    model_sred_rho.to(device)
-    model_sred_rho.device = device
+    model_sred.to(device)
+    model_sred.device = device
     
     
     
@@ -123,7 +126,23 @@ def main(batch_size):
     start_time = time.time()
     # Training loop
     for epoch in range(num_epochs):
-        model_sred_rho.train()  # Set model to training mode
+        # case_num = epoch % num_case + 1
+        # dataset = TrainingDataSet(f'data/data_trd_{data_num:.0e}_case{case_num:02d}.mat')
+        
+        # # Split dataset into training and validation
+        # train_indices, val_indices = train_test_split(
+        #     range(len(dataset)),
+        #     test_size=0.2,  # 20% for validation
+        #     random_state=42
+        # )
+        # train_dataset = Subset(dataset, train_indices)
+        # val_dataset = Subset(dataset, val_indices)
+        
+        # # batch_size = 10
+        # train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        # test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        
+        model_sred.train()  # Set model to training mode
         total_train_loss = 0.0
         
         
@@ -139,7 +158,7 @@ def main(batch_size):
             optimizer.zero_grad()
             
             
-            model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+            model_outputs = model_sred(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
             
             s_stack_batch = model_outputs['s_stack_batch']
             loss = custom_loss_function(
@@ -152,7 +171,7 @@ def main(batch_size):
             
             
         # Compute average loss for the epoch
-        average_train_loss = total_train_loss / len(train_loader) / model_sred_rho.M
+        average_train_loss = total_train_loss / len(train_loader) / model_sred.M
         
         # Log the loss
         writer.add_scalar('Loss/Training [dB]', 10*np.log10(average_train_loss), epoch)
@@ -164,7 +183,7 @@ def main(batch_size):
         
         
         # Validation phase
-        model_sred_rho.eval()  # Set model to evaluation mode
+        model_sred.eval()  # Set model to evaluation mode
         
         total_val_loss = 0.0
         sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
@@ -179,7 +198,7 @@ def main(batch_size):
                 y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
                 
                 
-                model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+                model_outputs = model_sred(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
                 
                 s_stack_batch = model_outputs['s_stack_batch']
                 
@@ -191,7 +210,7 @@ def main(batch_size):
                 
                 sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
                     
-        average_val_loss = total_val_loss / len(test_loader) / model_sred_rho.M
+        average_val_loss = total_val_loss / len(test_loader) / model_sred.M
         validation_losses.append(average_val_loss)
     
         # Log the loss
@@ -225,7 +244,7 @@ def main(batch_size):
 #         y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
         
         
-#         model_outputs = model_sred_rho(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+#         model_outputs = model_sred(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
         
 #         s_stack_batch = model_outputs['s_stack_batch']
         
@@ -249,8 +268,8 @@ def main(batch_size):
     if data_num=='2e3':
         # save model's information
         save_dict = {
-            'state_dict': model_sred_rho.state_dict(),
-            'N_step': model_sred_rho.N_step,
+            'state_dict': model_sred.state_dict(),
+            'N_step': model_sred.N_step,
             # Include any other attributes here
         }
         # save
@@ -266,8 +285,8 @@ def main(batch_size):
     rho_M_stack_batch = model_outputs['rho_M_stack_batch']
     rho_M_stack_avg = torch.sum(rho_M_stack_batch, dim=0)/batch_size
     print('rho values = ')
-    for n in range(model_sred_rho.N_step):
-        for m in range(model_sred_rho.M):
+    for n in range(model_sred.N_step):
+        for m in range(model_sred.M):
             print(f'{rho_M_stack_avg[n,m].item():.4f}', end=",      ")
         print('')
         
@@ -281,7 +300,7 @@ def main(batch_size):
     # rho_stack_batch = model_outputs['rho_stack_batch']
     # rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
     # print('rho values = ')
-    # for n in range(model_sred_rho.N_step):
+    # for n in range(model_sred.N_step):
     #     print(f'{rho_stack_avg[n].item()}')
     # print(f'finished time: {current_time}')
     
@@ -291,7 +310,7 @@ if __name__ == "__main__":
     # print(f'batch_size = {batch_size}')
     # main(batch_size)
     
-    batch_size = 30
+    batch_size = 10
     # lambda_var_rho = 1e1
     print(f'batch_size = {batch_size}')
     main(batch_size)

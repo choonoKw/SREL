@@ -11,10 +11,10 @@ import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
-from utils.complex_valued_dataset import ComplexValuedDataset
+from utils.training_dataset import TrainingDataSet
 from utils.load_scalars_from_setup import load_scalars_from_setup
-from utils.load_mapVector import load_mapVector
-from model.srel_rep_rho_intra import SREL_rep_rho_intra
+# from utils.load_mapVector import load_mapVector
+from model.srel_intra_rep_rho import SREL_intra_rep_rho
 
 from utils.custom_loss_intra import custom_loss_function
 
@@ -36,30 +36,17 @@ import os
 def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
-    y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = '1e1'
+    # y_M, Ly = load_mapVector('data/data_mapV.mat')
+    data_num = 1e1
     # batch_size = 20
-    dataset = ComplexValuedDataset(f'data/data_trd_{data_num}.mat')
     
-    
-    # Split dataset into training and validation
-    train_indices, val_indices = train_test_split(
-        range(len(dataset)),
-        test_size=0.2,  # 20% for validation
-        random_state=42
-    )
-    train_dataset = Subset(dataset, train_indices)
-    val_dataset = Subset(dataset, val_indices)
-    
-    
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     
     # loading constant
-    constants['Ly'] = Ly
+    constants['Ly'] = 570
     Nt = constants['Nt']
     N = constants['N']
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
+    num_case = 1 # 
 
     ###############################################################
     ## Control Panel
@@ -67,7 +54,7 @@ def main(batch_size):
     # Initialize model
     N_step = 10
     constants['N_step'] = N_step
-    model_intra = SREL_rep_rho_intra(constants)
+    model_intra = SREL_intra_rep_rho(constants)
     # model_intra.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
@@ -110,6 +97,27 @@ def main(batch_size):
     start_time = time.time()
     # Training loop
     for epoch in range(num_epochs):
+        case_num = epoch % num_case + 1
+        dataset = TrainingDataSet(f'data/data_trd_{data_num:.0e}_case{case_num:02d}.mat')
+        
+        
+        # Split dataset into training and validation
+        train_indices, val_indices = train_test_split(
+            range(len(dataset)),
+            test_size=0.2,  # 20% for validation
+            random_state=42
+        )
+        train_dataset = Subset(dataset, train_indices)
+        val_dataset = Subset(dataset, val_indices)
+        
+        
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+        
+        # assign prameters from dataset        
+        y_M = dataset.y_M
+        
+        
         model_intra.train()  # Set model to training mode
         total_train_loss = 0.0
         
