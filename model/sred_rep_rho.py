@@ -22,10 +22,7 @@ class SRED_rho(nn.Module):
         self.modulus = constants['modulus']
         
         # Dynamically create the modules for estimating eta and rho
-        self.est_rho_modules = nn.ModuleList([
-            Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
-            for _ in range(self.N_step)
-        ])
+        self.est_rho_module = Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
         # self.est_rho_modules = Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
         
         
