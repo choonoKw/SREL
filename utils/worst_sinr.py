@@ -25,7 +25,7 @@ def worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch):
             sinr[m,:] = numerator / denominator
         
         # Accumulate loss for each batch item
-        sum_worst_sinr += torch.min(sinr)
+        sum_worst_sinr += torch.min(sinr).item()
 
     # Average the loss over the batch
     return sum_worst_sinr / batch_size
