@@ -41,7 +41,7 @@ import datetime
 import time
 import os
 
-from utils.validation import validation
+from utils.validation import validation_sred
 
 from utils.format_time import format_time
 
@@ -51,7 +51,7 @@ def main(batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -111,7 +111,7 @@ def main(batch_size):
     validation_losses = []
     
     
-    start_time = time.time()
+    start_time_total = time.time()
     
     # Training loop
     num_case = 24
@@ -121,7 +121,7 @@ def main(batch_size):
         
         sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
         
-        start_time = time.time()  # Start timing the inner loop
+        start_time_epoch = time.time()  # Start timing the inner loop
         for idx_case in range(num_case):
             case_num = idx_case + 1
             dataset = TrainingDataSet(f'data/{data_num:.0e}/data_trd_{data_num:.0e}_case{case_num:02d}.mat')
@@ -210,13 +210,13 @@ def main(batch_size):
         writer.flush()
         
         
-        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
+        worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], '
              f'Train Loss = {average_train_loss_db:.2f} dB, '
              f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
         
-        time_spent = time.time() - start_time  # Time spent in the current inner loop iteration
-        time_left = time_spent * (num_epochs - epoch - 1)  # Estimate the time left
+        time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
+        time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
         formatted_time_left = format_time(time_left)
         print(f"{formatted_time_left} left")
         
@@ -230,15 +230,15 @@ def main(batch_size):
     # End time
     end_time = time.time()
     
-    # Calculate the duration
-    duration = end_time - start_time
+    # Calculate the time_spent_total
+    time_spent_total = end_time - start_time_total
     
-    print(f"Training completed in: {duration:.2f} seconds")
+    print(f"Training completed in: {time_spent_total:.2f} seconds")
     
     plot_losses(training_losses, validation_losses)
     
     # validation
-    sinr_db_opt = validation(constants,model_sred)
+    sinr_db_opt = validation_sred(constants,model_sred)
     
 
     # save model's information

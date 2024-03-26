@@ -7,7 +7,7 @@ Created on Wed Feb 28 21:40:10 2024
 
 import torch
 import torch.optim as optim
-# import numpy as np
+import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
@@ -19,7 +19,7 @@ from model.srel_intra_rep_rho import SREL_intra_rep_rho
 from utils.custom_loss_intra import custom_loss_function
 
 # from utils.worst_sinr import worst_sinr_function
-from model.srel_rep_rho_intra_tester import SREL_intra_rep_tester
+from model.srel_intra_rep_rho_tester import SREL_intra_rep_rho_tester
 from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
@@ -61,7 +61,7 @@ def main(save_weights, save_logs, batch_size):
     constants['N_step'] = N_step
     model_intra = SREL_intra_rep_rho(constants)
     # model_intra.apply(init_weights)
-    num_epochs = 1
+    num_epochs = 10
     # Initialize the optimizer
     learning_rate = 1e-4
     print(f'learning_rate={learning_rate:.0e}')
@@ -79,7 +79,7 @@ def main(save_weights, save_logs, batch_size):
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/SREL_rep_rho_intra/data{data_num}/{current_time}'
+        f'runs/SREL_intra_rep_rho/data{data_num:.0e}/{current_time}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
@@ -170,7 +170,7 @@ def main(save_weights, save_logs, batch_size):
                     
             # Validation phase
             model_intra.eval()  # Set model to evaluation mode
-            model_intra_tester = SREL_intra_rep_tester(constants, model_intra).to(device)
+            model_intra_tester = SREL_intra_rep_rho_tester(constants, model_intra).to(device)
             model_intra_tester.device = device
             
             # total_val_loss = 0.0
@@ -205,7 +205,8 @@ def main(save_weights, save_logs, batch_size):
                         #s_stack_batch = model_outputs['s_stack_batch']
                         #s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
                         #sinr_M_batch[:,m] = sinr_function(constants, G_batch, H_batch, s_optimal_batch)
-                    s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M)
+                    model_outputs = model_intra_tester(phi_batch, w_M_batch, y_M)
+                    s_stack_batch = model_outputs['s_stack_batch']
                     s_optimal_batch = s_stack_batch[:,-1,:]
                     sum_of_worst_sinr_avg += worst_sinr_function(
                         constants, s_optimal_batch, G_M_batch, H_M_batch)
@@ -215,11 +216,11 @@ def main(save_weights, save_logs, batch_size):
                 
         # Compute average loss for the epoch and Log the loss
         average_train_loss = total_train_loss / model_intra.M / len(train_loader) / num_case
-        average_train_loss_db = 10*torch.log10(average_train_loss)
+        average_train_loss_db = 10*np.log10(average_train_loss)
         training_losses.append(average_train_loss_db)
         
         average_val_loss = total_val_loss / model_intra.M / len(test_loader) / num_case
-        average_val_loss_db = 10*torch.log10(average_val_loss)
+        average_val_loss_db = 10*np.log10(average_val_loss)
         validation_losses.append(average_val_loss_db)
         
         if save_logs:
@@ -244,7 +245,7 @@ def main(save_weights, save_logs, batch_size):
         
         writer.flush()
     
-        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
+        worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], '
              f'Train Loss = {average_train_loss_db:.2f} dB, '
              f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
@@ -267,24 +268,24 @@ def main(save_weights, save_logs, batch_size):
     plot_losses(training_losses, validation_losses)
     
     # validation
-    sinr_db_opt = validation(constants,model_intra)
+    sinr_db_opt = validation(constants,model_intra_tester)
     
     
-    # validate the values of rho
-    rho_stack_batch = model_outputs['rho_stack_batch']
-    rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
-    print('\n','rho values = ')
-    for n in range(model_intra.N_step):
-        print(f'{rho_stack_avg[n].item():.4f}')
-    print(f'finished time: {current_time}')
+    # # validate the values of rho
+    # rho_stack_batch = model_outputs['rho_stack_batch']
+    # rho_stack_avg = torch.sum(rho_stack_batch, dim=0)/batch_size
+    # print('\n','rho values = ')
+    # for n in range(model_intra.N_step):
+    #     print(f'{rho_stack_avg[n].item():.4f}')
+    # print(f'finished time: {current_time}')
     
-    # SINR values for each step
-    # sinr_list = torch.zeros(N_step)
-    for update_step in range(N_step+1):
-        s_batch = s_stack_batch[:,update_step,:]
-        # sinr_list[update_step]= worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
-        sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
-        print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
+    # # SINR values for each step
+    # # sinr_list = torch.zeros(N_step)
+    # for update_step in range(N_step+1):
+    #     s_batch = s_stack_batch[:,update_step,:]
+    #     # sinr_list[update_step]= worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
+    #     sinr_db = 10*torch.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
+    #     print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
     
     # save model's information
     if save_weights:
@@ -295,7 +296,7 @@ def main(save_weights, save_logs, batch_size):
         }
         # save
         dir_weight_save = (
-            f'weights/SREL_rep_rho_intra/{current_time}'
+            f'weights/SREL_intra_rep_rho/{current_time}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
