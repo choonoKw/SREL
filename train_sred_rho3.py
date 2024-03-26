@@ -70,7 +70,7 @@ def main(batch_size):
 #    model_sred.apply(init_weights)
     num_epochs = 50
     # Initialize the optimizer
-    learning_rate=1e-5
+    learning_rate=1e-3
     print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_sred.parameters(), lr=learning_rate)
     
