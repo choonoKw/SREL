@@ -20,7 +20,7 @@ class SREL_intra_rep_rho_tester(nn.Module):
         
         # Initialize the list
         s_stack_batch = torch.zeros(batch_size, N_step+1, self.Ls, dtype=torch.complex64).to(self.device)
-        mu_stack_batch = torch.zeros(batch_size, N_step, M).to(self.device)
+        rho_M_stack_batch = torch.zeros(batch_size, N_step, M)
         
         for idx_batch in range(batch_size):
             phi0 = phi_batch[idx_batch]
@@ -42,7 +42,7 @@ class SREL_intra_rep_rho_tester(nn.Module):
                     
                     eta_net += rho*eta
                 
-                
+                    rho_M_stack_batch[idx_batch,update_step,m] = rho
                 
                 phi = phi - eta_net  # Update phi
                 
@@ -54,5 +54,8 @@ class SREL_intra_rep_rho_tester(nn.Module):
             
         # return s_stack_batch
             
-        
-        return s_stack_batch
+        model_outputs = {
+            's_stack_batch': s_stack_batch,
+            'rho_M_stack_batch': rho_M_stack_batch
+        }
+        return model_outputs
