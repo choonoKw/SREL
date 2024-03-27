@@ -38,7 +38,7 @@ from utils.format_time import format_time
 
 # import torch.nn as nn
 
-def main(save_weights, save_logs, batch_size):
+def main(save_weights, save_logs, lambda_eta):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -60,18 +60,22 @@ def main(save_weights, save_logs, batch_size):
     N_step = 10
     constants['N_step'] = N_step
     model_intra = SREL_intra_rep_rho(constants)
-    # model_intra.apply(init_weights)
+    batch_size = 5
     num_epochs = 10
     # Initialize the optimizer
     learning_rate = 1e-4
-    print(f'learning_rate={learning_rate:.0e}')
+    
     optimizer = optim.Adam(model_intra.parameters(), lr=learning_rate)
     
     # loss setting
     hyperparameters = {
-        'lambda_eta': 1e-6,
+        # 'lambda_eta': 1e-6,
+        'lambda_eta': lambda_eta
         'lambda_sinr': 1e-2,
     }    
+    
+    print(f'learning_rate={learning_rate:.0e}, '
+          f"lambda_eta={hyperparameters['lambda_eta']:.0e}")
     ###############################################################
     # for results
     # Get the current time
