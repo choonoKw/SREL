@@ -26,7 +26,6 @@ from model.sred import SRED_rep_rho
 # print('SRED_rho with Batch Normalization (BN)')
 
 
-
 from utils.custom_loss_sred_rho import custom_loss_function
 from utils.worst_sinr import worst_sinr_function
 
@@ -40,14 +39,16 @@ from visualization.plotting import plot_losses # result plot
 import datetime
 import time
 import os
+import argparse
 
 from utils.validation import validation_sred
+from utils.save_result_mat import save_mat
 
 from utils.format_time import format_time
 
 # import torch.nn as nn
 
-def main(batch_size):
+def main(save_weights, save_logs, save_mat, batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -84,18 +85,18 @@ def main(batch_size):
     ###############################################################
     # for results
     # Get the current time
-    current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') 
-    print(f'current time: {current_time}')
+    start_time_tag = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') 
+    print(f'current time: {start_time_tag}')
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/SRED_rho/data{data_num:.0e}/{current_time}'
+        f'runs/SRED_rho/data{data_num:.0e}/{start_time_tag}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SRED_rho/data{data_num:.0e}/Nstep{N_step:02d}_{current_time}'
+    dir_weight_save = f'weights/SRED_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -195,19 +196,22 @@ def main(batch_size):
                     sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
                     
         # Compute average loss for the epoch and Log the loss
-        average_train_loss = total_train_loss / model_sred.M / len(train_loader) / num_case
-        training_losses.append(average_train_loss)
+        average_train_loss = total_train_loss / model_intra.M / len(train_loader) / num_case
         average_train_loss_db = 10*np.log10(average_train_loss)
-        writer.add_scalar('Loss/Training [dB]', average_train_loss_db, epoch)
-                    
-        average_val_loss = total_val_loss / model_sred.M / len(test_loader) / num_case
-        validation_losses.append(average_val_loss)
+        training_losses.append(average_train_loss_db)
+        
+        average_val_loss = total_val_loss / model_intra.M / len(test_loader) / num_case
         average_val_loss_db = 10*np.log10(average_val_loss)
-        writer.add_scalar('Loss/Testing [dB]', average_val_loss_db, epoch)
+        validation_losses.append(average_val_loss_db)
+        
+        if save_logs:
+            writer.add_scalar('Loss/Training [dB]', average_train_loss_db, epoch)
+            writer.add_scalar('Loss/Testing [dB]', average_val_loss_db, epoch)
+            writer.flush()
     
         # Log the loss
         
-        writer.flush()
+       
         
         
         worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
@@ -238,35 +242,46 @@ def main(batch_size):
     plot_losses(training_losses, validation_losses)
     
     # validation
-    sinr_db_opt = validation_sred(constants,model_sred)
+    worst_sinr_stack_list, f_stack_list = validation_sred(constants,model_sred)
+    
+    if save_mat:
+        matfilename = "data_SRED_rho_10step_result.mat"
+        save_mat(matfilename, worst_sinr_stack_list, f_stack_list)
     
 
     # save model's information
-    save_dict = {
-        'state_dict': model_sred.state_dict(),
-        'N_step': model_sred.N_step,
-        # Include any other attributes here
-    }
-    # save
-    dir_weight_save = (
-        f'weights/SRED_rho/{current_time}'
-        f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-        f'_sinr_{sinr_db_opt:.2f}dB'
-    )
-    os.makedirs(dir_weight_save, exist_ok=True)
-    torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
+    if save_weights:
+        save_dict = {
+            'state_dict': model_sred.state_dict(),
+            'N_step': model_sred.N_step,
+            # Include any other attributes here
+        }
+        # save
+        dir_weight_save = (
+            f'weights/SRED_rho/{start_time_tag}'
+            f'_Nstep{N_step:02d}_batch{batch_size:02d}'
+            f'_sinr_{sinr_db_opt:.2f}dB'
+        )
+        os.makedirs(dir_weight_save, exist_ok=True)
+        torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
     
     
     
     
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train a model.")
+    
+    parser.add_argument("--save-weights", action="store_true",
+                        help="Save the model weights after training")
+    parser.add_argument("--save-logs", action="store_true",
+                        help="Save logs for Tensorboard after training")
+    parser.add_argument("--save-mat", action="store_true",
+                        help="Save mat file including worst-sinr values")
+    
+    args = parser.parse_args()
     
     batch_size = 2
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
     
     batch_size = 5
-    # lambda_var_rho = 1e1
-    print(f'batch_size = {batch_size}')
-    main(batch_size)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)

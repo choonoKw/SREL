@@ -12,6 +12,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 from utils.worst_sinr import worst_sinr_function
+from custom_loss import sum_of_reciprocal
 
 def validation(constants,model_val):
     model_val.eval()
@@ -48,11 +49,12 @@ def validation(constants,model_val):
     s_stack_batch = model_outputs['s_stack_batch']
     for update_step in range(model_val.N_step+1):
         s_batch = s_stack_batch[:,update_step,:]
-        sinr_db = 10*np.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
-        print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
-    sinr_db_opt = sinr_db
+        worst_sinr_batch = worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
+        sinr_avg_db = 10*np.log10( np.sum(worst_sinr_batch)/batch_size )
+        print(f'Step {update_step:02d}, SINR = {sinr_avg_db:.4f} dB')
+    sinr_avg_db_opt = sinr_avg_db
     
-    return sinr_db_opt
+    return sinr_avg_db_opt
 
 def validation_sred(constants,model_val):
     model_val.eval()
@@ -87,11 +89,18 @@ def validation_sred(constants,model_val):
         
     # SINR values for each step
     s_stack_batch = model_outputs['s_stack_batch']
+    
+    worst_sinr_stack_list= np.zeros(batch_size,model_val.N_step+1)
+    f_stack_list = np.zeros(batch_size,model_val.N_step+1)
     for update_step in range(model_val.N_step+1):
         s_batch = s_stack_batch[:,update_step,:]
-        sinr_db = 10*np.log10(worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch))
-        print(f'Step {update_step:02d}, SINR = {sinr_db:.4f} dB')
-    sinr_db_opt = sinr_db
+        worst_sinr_batch = worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
+        sinr_avg_db = 10*np.log10( np.sum(worst_sinr_batch)/batch_size )
+        print(f'Step {update_step:02d}, SINR = {sinr_avg_db:.4f} dB')
+        worst_sinr_stack_list[:,update_step] = worst_sinr_batch
+        
+        f_stack_list[:,update_step] = sum_of_reciprocal(constants, G_M_batch, H_M_batch, s_batch)
+    # sinr_avg_db_opt = sinr_avg_db
     
-    return sinr_db_opt
+    return worst_sinr_stack_list, f_stack_list
             
