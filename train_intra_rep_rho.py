@@ -79,11 +79,11 @@ def main(save_weights, save_logs, lambda_eta):
     ###############################################################
     # for results
     # Get the current time
-    current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
+    start_time_tag = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')    
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/SREL_intra_rep_rho/data{data_num:.0e}/{current_time}'
+        f'runs/SREL_intra_rep_rho/data{data_num:.0e}/{start_time_tag}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
@@ -282,7 +282,7 @@ def main(save_weights, save_logs, lambda_eta):
     # print('\n','rho values = ')
     # for n in range(model_intra.N_step):
     #     print(f'{rho_stack_avg[n].item():.4f}')
-    # print(f'finished time: {current_time}')
+    # print(f'finished time: {start_time_tag}')
     
     # # SINR values for each step
     # # sinr_list = torch.zeros(N_step)
@@ -301,7 +301,7 @@ def main(save_weights, save_logs, lambda_eta):
         }
         # save
         dir_weight_save = (
-            f'weights/SREL_intra_rep_rho/{current_time}'
+            f'weights/SREL_intra_rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
