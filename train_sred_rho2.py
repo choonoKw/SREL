@@ -210,7 +210,7 @@ def main(batch_size):
         writer.flush()
         
         
-        worst_sinr_avg_db = 10*torch.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
+        worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], '
              f'Train Loss = {average_train_loss_db:.2f} dB, '
              f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
