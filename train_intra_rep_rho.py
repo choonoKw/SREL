@@ -231,6 +231,7 @@ def main(save_weights, save_logs, lambda_eta):
             writer.add_scalar('Loss/Training [dB]', average_train_loss_db, epoch)
             
             writer.add_scalar('Loss/Testing [dB]', average_val_loss_db, epoch)
+            writer.flush()
         
         # # Compute average loss for the epoch
         # average_train_loss = total_train_loss / len(train_loader) / model_intra.M
@@ -247,7 +248,7 @@ def main(save_weights, save_logs, lambda_eta):
         # # Log the loss
         # writer.add_scalar('Loss/Testing', average_val_loss, epoch)
         
-        writer.flush()
+        
     
         worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], '
