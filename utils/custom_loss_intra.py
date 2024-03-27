@@ -7,7 +7,7 @@ Created on Tue Feb 27 16:10:00 2024
 
 import torch
 
-def reciprocal_sinr(constants, G, H, s):
+def reciprocal_sinr(G, H, s):
     # f = 0.0
     numerator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
     denominator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
@@ -15,7 +15,7 @@ def reciprocal_sinr(constants, G, H, s):
     # Average the loss over the batch
     return numerator / denominator
 
-def regularizer_eta(constants, G, H, s, eta):
+def regularizer_eta(G, H, s, eta):
     # Using torch.vdot for complex dot products where one operand is conjugated
     sGs = torch.abs(torch.vdot(s, torch.matmul(G, s)))  # Equivalent to s'*G*s in MATLAB
     sHs = torch.abs(torch.vdot(s, torch.matmul(H, s)))  # Equivalent to s'*H*s in MATLAB
@@ -49,18 +49,18 @@ def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_out
         s = s_stack[0]
         eta = eta_stack[0]
     
-        f_eta = regularizer_eta(constants, G, H, s, eta)
+        f_eta = regularizer_eta(G, H, s, eta)
         f_sinr = 0.0
     
         for n in range(N_step-1):
             s = s_stack[n+1]
             eta = eta_stack[n+1]
             
-            f_eta += regularizer_eta(constants, G, H, s, eta)
-            f_sinr += reciprocal_sinr(constants, G, H, s)
+            f_eta += regularizer_eta(G, H, s, eta)
+            f_sinr += reciprocal_sinr(G, H, s)
         
-        s = s_stack[-1]
-        f_sinr_opt = reciprocal_sinr(constants, G, H, s)
+        s = s_stack[N_step]
+        f_sinr_opt = reciprocal_sinr(G, H, s)
     
         loss = f_sinr_opt + \
             hyperparameters['lambda_sinr']*f_sinr/(N_step-1) + hyperparameters['lambda_eta']*f_eta/N_step
