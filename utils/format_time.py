@@ -5,13 +5,14 @@ Created on Fri Mar  25 22:43
 
 """
 
-def format_time(seconds):
-    if seconds < 120:
-        return f"{seconds:.2f} sec"
-    elif seconds < 7200: # 120 minutes
-        minutes = seconds / 60
-        return f"{minutes:.2f} min"
+def format_time(time_seconds):
+    if time_seconds < 120:
+        return f"{time_seconds:.2f} sec"
+    elif time_seconds < 7200: # 120 minutes
+        minutes = time_seconds // 60
+        seconds = time_seconds % 60
+        return f"{int(minutes)} min {int(seconds)}"
     else:
-        hours = seconds // 3600
-        minutes = (seconds % 3600) / 60
-        return f"{int(hours)}h {int(minutes)}min"
+        hours = time_seconds // 3600
+        minutes = (time_seconds % 3600) / 60
+        return f"{int(hours)} h {int(minutes)} min"
