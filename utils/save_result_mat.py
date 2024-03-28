@@ -11,7 +11,7 @@ from scipy.io import savemat
 # import os
 # import sys
 
-def save_mat(filename, worst_sinr_stack_list, f_stack_list):
+def save_result_mat(filename, worst_sinr_stack_list, f_stack_list):
     """
     Saves the given arrays to a .mat file.
 
