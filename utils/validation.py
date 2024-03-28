@@ -12,7 +12,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 from utils.worst_sinr import worst_sinr_function
-from custom_loss import sum_of_reciprocal
+from utils.custom_loss import sum_of_reciprocal
 
 def validation(constants,model_val):
     model_val.eval()
@@ -90,8 +90,8 @@ def validation_sred(constants,model_val):
     # SINR values for each step
     s_stack_batch = model_outputs['s_stack_batch']
     
-    worst_sinr_stack_list= np.zeros(batch_size,model_val.N_step+1)
-    f_stack_list = np.zeros(batch_size,model_val.N_step+1)
+    worst_sinr_stack_list= np.zeros((batch_size,model_val.N_step+1))
+    f_stack_list = np.zeros((batch_size,model_val.N_step+1))
     for update_step in range(model_val.N_step+1):
         s_batch = s_stack_batch[:,update_step,:]
         worst_sinr_batch = worst_sinr_function(constants, s_batch, G_M_batch, H_M_batch)
