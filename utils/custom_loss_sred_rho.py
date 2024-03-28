@@ -7,7 +7,12 @@ Created on Wed Feb 28 15:51:20 2024
 
 
 import torch
-from utils.custom_loss_intra import reciprocal_sinr
+# from utils.custom_loss_intra import reciprocal_sinr
+
+def reciprocal_sinr(G,H,s):
+    numerator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
+    denominator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
+    return numerator / denominator
 
 
 def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
