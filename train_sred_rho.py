@@ -52,7 +52,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e1
+    data_num = 1e2
     
     
     # loading constant
