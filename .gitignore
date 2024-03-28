@@ -9,6 +9,4 @@ data/
 *.1
 .ipynb_checkpoints
 /data
-/data
-*.mat
-data/data_setup.mat
+**/*.mat
