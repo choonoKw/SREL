@@ -69,7 +69,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_rep_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 2
+    num_epochs = 50
     # Initialize the optimizer
     learning_rate=1e-3
     print(f'learning_rate={learning_rate:.0e}')
@@ -289,6 +289,10 @@ if __name__ == "__main__":
     
     # batch_size = 2
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=10)
     
     # batch_size = 5
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
