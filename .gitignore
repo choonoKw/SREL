@@ -11,3 +11,4 @@ data/
 /data
 /data
 *.mat
+data/data_setup.mat
