@@ -7,26 +7,8 @@ Created on Tue Feb 27 16:10:00 2024
 
 import torch
 
-def reciprocal_sinr(G, H, s):
-    # f = 0.0
-    numerator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
-    denominator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
+from utils.custom_loss import reciprocal_sinr, regularizer_eta
 
-    # Average the loss over the batch
-    return numerator / denominator
-
-def regularizer_eta(G, H, s, eta):
-    # Using torch.vdot for complex dot products where one operand is conjugated
-    sGs = torch.abs(torch.vdot(s, torch.matmul(G, s)))  # Equivalent to s'*G*s in MATLAB
-    sHs = torch.abs(torch.vdot(s, torch.matmul(H, s)))  # Equivalent to s'*H*s in MATLAB
-    Gs = torch.matmul(G, s)  # G*s
-    Hs = torch.matmul(H, s)  # H*s
-        
-    # Calculating eta_tilde using torch.vdot
-    eta_tilde = 2 / (sHs ** 2) * torch.imag((sHs * Gs - sGs * Hs) * torch.conj(s))
-        
-    # Average the loss over the batch
-    return torch.norm(eta_tilde - eta) ** 2
 
 def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs):
     N_step = constants['N_step']
@@ -69,20 +51,20 @@ def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_out
     
     return loss_sum/ batch_size
 
-def sinr_function(constants, G_batch, H_batch, s_batch):
-    batch_size = s_batch.size(0)
+# def sinr_function(constants, G_batch, H_batch, s_batch):
+#     batch_size = s_batch.size(0)
     
-    sinr_batch = torch.empty(batch_size)
-    for idx_batch in range(batch_size):
-        G = G_batch[idx_batch]
-        H = H_batch[idx_batch]
+#     sinr_batch = torch.empty(batch_size)
+#     for idx_batch in range(batch_size):
+#         G = G_batch[idx_batch]
+#         H = H_batch[idx_batch]
         
-        s = s_batch[idx_batch]
+#         s = s_batch[idx_batch]
         
-        numerator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
-        denominator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
-        sinr_batch[idx_batch] = numerator / denominator
+#         numerator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
+#         denominator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
+#         sinr_batch[idx_batch] = numerator / denominator
 
-        # Average the loss over the batch
+#         # Average the loss over the batch
         
-    return sinr_batch
+#     return sinr_batch
