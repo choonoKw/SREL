@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
-from utils.complex_valued_dataset import ComplexValuedDataset
+# from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.training_dataset import TrainingDataSet
 from utils.load_scalars_from_setup import load_scalars_from_setup
 from utils.load_mapVector import load_mapVector
@@ -42,7 +42,7 @@ import os
 import argparse
 
 from utils.validation import validation_sred
-from utils.save_result_mat import save_mat
+from utils.save_result_mat import save_result_mat
 
 from utils.format_time import format_time
 
@@ -52,7 +52,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -69,9 +69,9 @@ def main(save_weights, save_logs, save_mat, batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_rep_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 2
     # Initialize the optimizer
-    learning_rate=1e-5
+    learning_rate=1e-3
     print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_sred.parameters(), lr=learning_rate)
     
@@ -193,14 +193,16 @@ def main(save_weights, save_logs, save_mat, batch_size):
                     s_stack_batch = model_outputs['s_stack_batch']
                     s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
 
-                    sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                    sum_of_worst_sinr_avg+= np.sum(
+                        worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                        )/batch_size
                     
         # Compute average loss for the epoch and Log the loss
-        average_train_loss = total_train_loss / model_intra.M / len(train_loader) / num_case
+        average_train_loss = total_train_loss / model_sred.M / len(train_loader) / num_case
         average_train_loss_db = 10*np.log10(average_train_loss)
         training_losses.append(average_train_loss_db)
         
-        average_val_loss = total_val_loss / model_intra.M / len(test_loader) / num_case
+        average_val_loss = total_val_loss / model_sred.M / len(test_loader) / num_case
         average_val_loss_db = 10*np.log10(average_val_loss)
         validation_losses.append(average_val_loss_db)
         
@@ -209,11 +211,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
             writer.add_scalar('Loss/Testing [dB]', average_val_loss_db, epoch)
             writer.flush()
     
-        # Log the loss
-        
-       
-        
-        
+        # Log the loss        
         worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
         print(f'Epoch [{epoch+1}/{num_epochs}], '
              f'Train Loss = {average_train_loss_db:.2f} dB, '
@@ -243,10 +241,19 @@ def main(save_weights, save_logs, save_mat, batch_size):
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation_sred(constants,model_sred)
+    sinr_db_opt = 10*np.log10(
+        np.mean(worst_sinr_stack_list[:,-1])
+        )
     
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
-        save_mat(matfilename, worst_sinr_stack_list, f_stack_list)
+        dir_mat_save = (
+            f'mat/SRED_rho/{start_time_tag}'
+            f'_Nstep{N_step:02d}_batch{batch_size:02d}'
+            f'_sinr_{sinr_db_opt:.2f}dB'
+        )
+        os.makedirs(dir_mat_save, exist_ok=True)
+        save_result_mat(os.path.join(dir_mat_save, matfilename), worst_sinr_stack_list, f_stack_list)
     
 
     # save model's information
@@ -280,8 +287,11 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    batch_size = 2
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
+    # batch_size = 2
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2)
     
-    batch_size = 5
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
+    # batch_size = 5
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
+    
+    # batch_size = 10
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
