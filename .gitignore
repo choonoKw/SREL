@@ -1,6 +1,7 @@
 weights/
 runs/
 data/
+trash/
 *.ini
 *.pyc
 *.xml
