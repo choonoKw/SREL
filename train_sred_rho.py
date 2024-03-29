@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader, Subset
 # from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.training_dataset import TrainingDataSet
 from utils.load_scalars_from_setup import load_scalars_from_setup
-from utils.load_mapVector import load_mapVector
+# from utils.load_mapVector import load_mapVector
 
 # from model.sred_rho import SRED_rho
 # print('SRED_rho OG.')
@@ -52,7 +52,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -69,7 +69,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_rep_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 2
     # Initialize the optimizer
     learning_rate=1e-3
     print(f'learning_rate={learning_rate:.0e}')
@@ -289,10 +289,6 @@ if __name__ == "__main__":
     
     # batch_size = 2
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=10)
     
     # batch_size = 5
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
