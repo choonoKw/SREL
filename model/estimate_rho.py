@@ -63,7 +63,6 @@ class Estimate_rho_BN(nn.Module):
             nn.Linear(512, 128),
             nn.BatchNorm1d(128),
             nn.ReLU(),
-            # nn.Dropout(0.5),  # Optional: add dropout for regularization
             nn.Linear(128, 32),
             nn.BatchNorm1d(32),
             nn.ReLU(),
