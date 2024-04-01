@@ -22,7 +22,7 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 # from model.sred_rho_DO import SRED_rho
 # print('SRED_rho with Drop Out (DO)')
 
-from model.sred import SRED_vary_rho2
+from model.sred import SRED_vary_rho
 # print('SRED_rho with Batch Normalization (BN)')
 
 
