@@ -72,16 +72,19 @@ def main(save_weights, save_logs, save_mat, batch_size):
     num_epochs = 10
     # Initialize the optimizer
     learning_rate=1e-4
-    print(f'learning_rate={learning_rate:.0e}')
+    
     optimizer = optim.Adam(model_sred.parameters(), lr=learning_rate)
     
     # loss setting
     lambda_sinr = 1e-2
-    lambda_var_rho = 0
+    lambda_var_rho = 1e-2
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
         'lambda_var_rho': lambda_var_rho
     }    
+    
+    print(f'learning_rate={learning_rate:.0e}, '
+          f'lambda_var_rho={lambda_var_rho:.0e}')
     ###############################################################
     # for results
     # Get the current time
@@ -90,13 +93,13 @@ def main(save_weights, save_logs, save_mat, batch_size):
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/SRED_rho/data{data_num:.0e}/{start_time_tag}'
+        f'runs/SRED_vary_rho/data{data_num:.0e}/{start_time_tag}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/SRED_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
+    dir_weight_save = f'weights/SRED_vary_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -237,7 +240,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     
     print(f"Training completed in: {time_spent_total:.2f} seconds")
     
-    plot_losses(training_losses, validation_losses)
+    # plot_losses(training_losses, validation_losses)
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation_sred(constants,model_sred)
@@ -248,7 +251,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
-            f'mat/SRED_rho/{start_time_tag}'
+            f'mat/SRED_vary_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
@@ -265,7 +268,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
         }
         # save
         dir_weight_save = (
-            f'weights/SRED_rho/{start_time_tag}'
+            f'weights/SRED_vary_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
