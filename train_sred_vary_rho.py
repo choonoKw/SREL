@@ -22,7 +22,7 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 # from model.sred_rho_DO import SRED_rho
 # print('SRED_rho with Drop Out (DO)')
 
-from model.sred import SRED_rep_rho_BN
+from model.sred import SRED_vary_rho
 # print('SRED_rho with Batch Normalization (BN)')
 
 
@@ -67,7 +67,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     # Initialize model
     N_step = 10
     constants['N_step'] = N_step
-    model_sred = SRED_rep_rho_BN(constants)
+    model_sred = SRED_vary_rho(constants)
 #    model_sred.apply(init_weights)
     num_epochs = 10
     # Initialize the optimizer
