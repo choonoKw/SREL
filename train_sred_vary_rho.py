@@ -48,11 +48,11 @@ from utils.format_time import format_time
 
 # import torch.nn as nn
 
-def main(save_weights, save_logs, save_mat, batch_size):
+def main(save_weights, save_logs, save_mat, batch_size,lambda_var_rho):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e1
+    data_num = 1e2
     
     
     # loading constant
@@ -69,7 +69,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     constants['N_step'] = N_step
     model_sred = SRED_vary_rho(constants)
 #    model_sred.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     learning_rate=1e-4
     
@@ -225,12 +225,6 @@ def main(save_weights, save_logs, save_mat, batch_size):
         formatted_time_left = format_time(time_left)
         print(f"{formatted_time_left} left")
         
-        # print(f'Epoch [{epoch+1}/{num_epochs}], '
-              # f'Train Loss = {average_train_loss:.4f}, '
-              # f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
-        
-        
-        
         
     # End time
     end_time = time.time()
@@ -291,10 +285,29 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # batch_size = 2
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=2, lambda_var_rho=1e-2)
     
-    # batch_size = 5
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=5, lambda_var_rho=1e-2)
     
-    # batch_size = 10
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=7, lambda_var_rho=1e-2)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=2, lambda_var_rho=1e-1)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=5, lambda_var_rho=1e-1)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=7, lambda_var_rho=1e-1)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=2, lambda_var_rho=1e0)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=5, lambda_var_rho=1e0)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+         batch_size=7, lambda_var_rho=1e0)

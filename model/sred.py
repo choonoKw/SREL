@@ -183,8 +183,8 @@ def eta_sred(s_batch,G_batch, H_batch):
     # sHs = torch.vdot(s_batch, torch.matmul(H_batch, s_batch))  # Equivalent to s'*H*s in MATLAB
     # Gs = torch.matmul(G_batch, s_batch)  # G*s
     # Hs = torch.matmul(H_batch, s_batch)  # H*s
-    eta_batch = torch.real(2 / (sHs_batch ** 2)
-                           * torch.imag((sHs_batch * Gs_batch - sGs_batch * Hs_batch) * torch.conj(s_batch)))
+    eta_batch = 2 / (sHs_batch ** 2)
+                           * torch.imag((sHs_batch * Gs_batch - sGs_batch * Hs_batch) * torch.conj(s_batch))
     # for idx_batch in range(batch_size):
     #     phi0 = phi_batch[idx_batch]
     #     w_M = w_M_batch[idx_batch]
