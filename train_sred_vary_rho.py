@@ -285,29 +285,47 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # batch_size = 2
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=2, lambda_var_rho=1e-2)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=2, lambda_var_rho=1e-2)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=5, lambda_var_rho=1e-2)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=7, lambda_var_rho=1e-2)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=2, lambda_var_rho=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=5, lambda_var_rho=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=7, lambda_var_rho=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=2, lambda_var_rho=1e0)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=5, lambda_var_rho=1e0)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #      batch_size=7, lambda_var_rho=1e0)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=5, lambda_var_rho=1e-2)
+         batch_size=2, lambda_var_rho=1e1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=7, lambda_var_rho=1e-2)
+         batch_size=5, lambda_var_rho=1e1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=2, lambda_var_rho=1e-1)
+         batch_size=7, lambda_var_rho=1e1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=5, lambda_var_rho=1e-1)
+         batch_size=2, lambda_var_rho=1e2)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=7, lambda_var_rho=1e-1)
+         batch_size=5, lambda_var_rho=1e2)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=2, lambda_var_rho=1e0)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=5, lambda_var_rho=1e0)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         batch_size=7, lambda_var_rho=1e0)
+         batch_size=7, lambda_var_rho=1e2)
