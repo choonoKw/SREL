@@ -23,10 +23,11 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 # print('SRED_rho with Drop Out (DO)')
 
 from model.srel_intra_phase1 import SREL_intra_phase1_rep_rho
+from model.srel_intra_tester import SREL_intra_phase1_tester
 # print('SRED_rho with Batch Normalization (BN)')
 
 
-from utils.custom_loss_sred_rho import custom_loss_function
+from utils.custom_loss_intra import custom_loss_intra_phase1
 from utils.worst_sinr import worst_sinr_function
 
 # from utils.worst_sinr import worst_sinr_function
@@ -69,9 +70,9 @@ def main(save_weights, save_logs, save_mat, batch_size):
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 5
     # Initialize the optimizer
-    learning_rate=1e-4
+    learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_intra_phase1.parameters(), lr=learning_rate)
     
@@ -160,7 +161,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
                     model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
 
                     # s_stack_batch = model_outputs['s_stack_batch']
-                    loss = custom_loss_function(
+                    loss = custom_loss_intra_phase1(
                         constants, G_batch, H_batch, hyperparameters, model_outputs)
     
                     loss.backward()
@@ -192,7 +193,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
                         
                         model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
 
-                        val_loss = custom_loss_function(
+                        val_loss = custom_loss_intra_phase1(
                             constants, G_batch, H_batch, hyperparameters, model_outputs)
                         
                         total_val_loss += val_loss.item()
@@ -202,12 +203,16 @@ def main(save_weights, save_logs, save_mat, batch_size):
                         # s_stack_batch = model_outputs['s_stack_batch']
                         # s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
     
-                    s_stack_batch = model_intra_tester(
+                    model_outputs = model_intra_tester(
                         phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch
                         )
+                    
+                    s_stack_batch = model_outputs['s_stack_batch']
                     s_optimal_batch = s_stack_batch[:,-1,:]
-                    sum_of_worst_sinr_avg += worst_sinr_function(
-                        constants, s_optimal_batch, G_M_batch, H_M_batch)
+                    sum_of_worst_sinr_avg += np.sum(
+                        worst_sinr_function(
+                            constants, s_optimal_batch, G_M_batch, H_M_batch)
+                        )/batch_size
                     
         # Compute average loss for the epoch and Log the loss
         average_train_loss = total_train_loss / model_intra_phase1.M / len(train_loader) / num_case
@@ -252,7 +257,7 @@ def main(save_weights, save_logs, save_mat, batch_size):
     plot_losses(training_losses, validation_losses)
     
     # validation
-    worst_sinr_stack_list, f_stack_list = validation_sred(constants,model_sred)
+    worst_sinr_stack_list, f_stack_list = validation_sred(constants,model_intra_tester)
     sinr_db_opt = 10*np.log10(
         np.mean(worst_sinr_stack_list[:,-1])
         )

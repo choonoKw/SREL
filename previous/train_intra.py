@@ -194,7 +194,7 @@ def main(N_step):
                     val_loss = custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs)
                     total_val_loss += val_loss.item()
                     
-                s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M)
+                s_stack_batch = model_intra_tester(phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
                 s_optimal_batch = s_stack_batch[:,-1,:]
                 sum_of_worst_sinr_avg += worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
                 
