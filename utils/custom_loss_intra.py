@@ -30,7 +30,11 @@ def custom_loss_intra_phase1(constants, G_batch, H_batch, hyperparameters, model
         # f_rho_sum += hyperparameters['lambda_var_rho']*var_rho_avg
         
     s_batch =  s_stack_batch[:,-1,:]
-    f_sinr_opt = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch))
+    
+    f_sinr_opt_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
+    f_sinr_opt = torch.sum(f_sinr_opt_batch)
+    
+    sinr_opt_avg = torch.sum(1/f_sinr_opt_batch)/batch_size
     
     var_rho_avg = torch.sum(torch.var(rho_stack_batch, dim=0, unbiased=False))
     
@@ -40,7 +44,9 @@ def custom_loss_intra_phase1(constants, G_batch, H_batch, hyperparameters, model
         + hyperparameters['lambda_var_rho']*var_rho_avg
         )
     
-    return loss / batch_size 
+    loss_avg = loss / batch_size 
+    
+    return loss_avg, sinr_opt_avg
 
 
 def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs):
