@@ -22,7 +22,7 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 # from model.sred_rho_DO import SRED_rho
 # print('SRED_rho with Drop Out (DO)')
 
-from model.srel_intra_phase1 import SREL_intra_phase1_rep_rho
+from model.srel_intra_phase1 import SREL_intra_phase1_vary_rho
 from model.srel_intra_tester import SREL_intra_phase1_tester
 # print('SRED_rho with Batch Normalization (BN)')
 
@@ -49,11 +49,11 @@ from utils.format_time import format_time
 
 # import torch.nn as nn
 
-def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
+def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -71,17 +71,17 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     # Initialize model
     N_step = 10
     constants['N_step'] = N_step
-    model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
+    model_intra_phase1 = SREL_intra_phase1_vary_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 2
     # Initialize the optimizer
-    # learning_rate=1e-5
+    learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_intra_phase1.parameters(), lr=learning_rate)
     
     # loss setting
     lambda_sinr = 1e-2
-    lambda_var_rho = 0
+    # lambda_var_rho = 0
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
         'lambda_var_rho': lambda_var_rho
@@ -94,13 +94,13 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/intra_phase1/data{data_num:.0e}/{start_time_tag}'
+        f'runs/intra_phase1/vary_rho/data{data_num:.0e}/{start_time_tag}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/intra_phase1/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
+    dir_weight_save = f'weights/intra_phase1/vary_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
@@ -278,7 +278,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
-            f'mat/intra_phase1/{start_time_tag}'
+            f'mat/intra_phase1/vary_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
@@ -295,7 +295,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
         }
         # save
         dir_weight_save = (
-            f'weights/intra_phase1/{start_time_tag}'
+            f'weights/intra_phase1/vary_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
@@ -317,22 +317,10 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, learning_rate=1e-5)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-5)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-5)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-5)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, learning_rate=1e-4)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-4)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-4)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, learning_rate=1e-3)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-3)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-3)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-5)
 
 
