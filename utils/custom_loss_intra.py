@@ -11,6 +11,7 @@ import torch
 # from utils.custom_loss import reciprocal_sinr, regularizer_eta
 
 from utils.custom_loss_batch import reciprocal_sinr
+from utils.functions import eta_sred
 
 def custom_loss_intra_phase1(constants, G_batch, H_batch, hyperparameters, model_outputs):
     N_step = constants['N_step']
@@ -27,6 +28,7 @@ def custom_loss_intra_phase1(constants, G_batch, H_batch, hyperparameters, model
         # f_sinr = 
             
         f_sinr_sum += torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+        
         # f_rho_sum += hyperparameters['lambda_var_rho']*var_rho_avg
         
     s_batch =  s_stack_batch[:,-1,:]
@@ -48,44 +50,83 @@ def custom_loss_intra_phase1(constants, G_batch, H_batch, hyperparameters, model
     
     return loss_avg, sinr_opt_avg
 
-
-def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs):
+def custom_loss_intra_phase2(constants, G_batch, H_batch, hyperparameters, model_outputs):
     N_step = constants['N_step']
+    # device = G_batch.device
     s_stack_batch = model_outputs['s_stack_batch']
-    s_stack_batch = s_stack_batch.to(G_batch.device)
     eta_stack_batch = model_outputs['eta_stack_batch']
-    eta_stack_batch = eta_stack_batch.to (G_batch.device)
     batch_size = s_stack_batch.size(0)
     
-    loss_sum = 0.0
+    f_sinr_sum = 0.0
+    f_eta_sum = 0.0
     
-    for idx_batch in range(batch_size):
-        G = G_batch[idx_batch]
-        H = H_batch[idx_batch]
-        
-        s_stack = s_stack_batch[idx_batch]
-        eta_stack = eta_stack_batch[idx_batch]
-        
-        
-        s = s_stack[0]
-        eta = eta_stack[0]
-    
-        f_eta = regularizer_eta(G, H, s, eta)
-        f_sinr = 0.0
-    
-        for n in range(N_step-1):
-            s = s_stack[n+1]
-            eta = eta_stack[n+1]
+    for update_step in range(N_step-1):
+        s_batch =  s_stack_batch[:,update_step+1,:]
             
-            f_eta += regularizer_eta(G, H, s, eta)
-            f_sinr += reciprocal_sinr(G, H, s)
+        f_sinr_sum += torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
         
-        s = s_stack[N_step]
-        f_sinr_opt = reciprocal_sinr(G, H, s)
+        eta_batch = eta_stack_batch[:,update_step,:]
+        eta_tilde_batch = eta_sred(G_batch, H_batch, s_batch)
+        
+        f_eta_sum += torch.sum(torch.norm(eta_tilde_batch - eta_batch) ** 2)
+        
+        # f_rho_sum += hyperparameters['lambda_var_rho']*var_rho_avg
+        
+    s_batch =  s_stack_batch[:,-1,:]
     
-        loss = f_sinr_opt + \
-            hyperparameters['lambda_sinr']*f_sinr/(N_step-1) + hyperparameters['lambda_eta']*f_eta/N_step
+    f_sinr_opt_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
+    f_sinr_opt = torch.sum(f_sinr_opt_batch)
+    
+    sinr_opt_avg = torch.sum(1/f_sinr_opt_batch)/batch_size
+    
+    loss = (
+        f_sinr_opt
+        + hyperparameters['lambda_sinr']*f_sinr_sum/(N_step-1)
+        + hyperparameters['lambda_eta']*f_eta_sum
+        )
+    
+    loss_avg = loss / batch_size 
+    
+    return loss_avg, sinr_opt_avg
+
+
+# def custom_loss_function(constants, G_batch, H_batch, hyperparameters, model_outputs):
+#     N_step = constants['N_step']
+#     s_stack_batch = model_outputs['s_stack_batch']
+#     s_stack_batch = s_stack_batch.to(G_batch.device)
+#     eta_stack_batch = model_outputs['eta_stack_batch']
+#     eta_stack_batch = eta_stack_batch.to (G_batch.device)
+#     batch_size = s_stack_batch.size(0)
+    
+#     loss_sum = 0.0
+    
+#     for idx_batch in range(batch_size):
+#         G = G_batch[idx_batch]
+#         H = H_batch[idx_batch]
+        
+#         s_stack = s_stack_batch[idx_batch]
+#         eta_stack = eta_stack_batch[idx_batch]
+        
+        
+#         s = s_stack[0]
+#         eta = eta_stack[0]
+    
+#         f_eta = regularizer_eta(G, H, s, eta)
+#         f_sinr = 0.0
+    
+#         for n in range(N_step-1):
+#             s = s_stack[n+1]
+#             eta = eta_stack[n+1]
             
-        loss_sum += loss
+#             f_eta += regularizer_eta(G, H, s, eta)
+#             f_sinr += reciprocal_sinr(G, H, s)
+        
+#         s = s_stack[N_step]
+#         f_sinr_opt = reciprocal_sinr(G, H, s)
     
-    return loss_sum/ batch_size
+#         loss = f_sinr_opt + \
+#             hyperparameters['lambda_sinr']*f_sinr/(N_step-1) + hyperparameters['lambda_eta']*f_eta/N_step
+            
+#         loss_sum += loss
+    
+#     return loss_sum/ batch_size

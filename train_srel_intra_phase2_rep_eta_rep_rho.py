@@ -23,11 +23,12 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 # print('SRED_rho with Drop Out (DO)')
 
 from model.srel_intra_phase1 import SREL_intra_phase1_rep_rho
-from model.srel_intra_tester import SREL_intra_phase1_tester
+from model.srel_intra_phase2 import SREL_rep_eta
+from model.srel_intra_tester import SREL_intra_phase2_tester
 # print('SRED_rho with Batch Normalization (BN)')
 
 
-from utils.custom_loss_intra import custom_loss_intra_phase1
+from utils.custom_loss_intra import custom_loss_intra_phase2
 # from utils.worst_sinr import worst_sinr_function
 
 # from utils.worst_sinr import worst_sinr_function
@@ -64,11 +65,16 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
+    # Check for GPU availability.
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        torch.cuda.set_device(1)
+    
     ###############################################################
     ## Load weight
     ###############################################################
     # Load the bundled dictionary
-    dir_dict_saved = 'weights/SRED_rep_rho/20240328-145249_Nstep10_batch02_sinr_15.48dB'
+    dir_dict_saved = 'weights/intra_phase1/rep_rho/20240403-132816_Nstep10_batch02_sinr_15.47dB'
     loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
                              map_location=device)
     N_step = loaded_dict['N_step']
@@ -79,21 +85,32 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     # N_step = 10
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
-#    model_intra_phase1.apply(init_weights)
+    model_intra_phase1.load_state_dict(loaded_dict['state_dict'])   
+    
+    # freeze model_intra
+    for param in model_intra_phase1.parameters():
+        param.requires_grad = False
+        
+    # Initialize model
+    model_intra_phase2 = SREL_rep_eta(constants, model_intra_phase1)
+    
     num_epochs = 2
     # Initialize the optimizer
     # learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
-    optimizer = optim.Adam(model_intra_phase1.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model_intra_phase2.parameters(), lr=learning_rate)
     
     # loss setting
     lambda_sinr = 1e-2
-    lambda_var_rho = 0
+    lambda_eta = 0
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
-        'lambda_var_rho': lambda_var_rho
+        'lambda_eta': lambda_eta
     }    
     ###############################################################
+    model_intra_phase2.to(device)
+    model_intra_phase2.device = device
+    
     # for results
     # Get the current time
     start_time_tag = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') 
@@ -101,21 +118,14 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/intra_phase1/rep_rho/data{data_num:.0e}/{start_time_tag}'
+        f'runs/intra_phase2/rep_eta/data{data_num:.0e}/{start_time_tag}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/intra_phase1/rep_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
+    dir_weight_save = f'weights/intra_phase2/rep_eta/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
     os.makedirs(dir_weight_save, exist_ok=True)
-    
-    # Check for GPU availability
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-    model_intra_phase1.to(device)
-    model_intra_phase1.device = device
-    
     
     
     # List to store average loss per epoch
@@ -151,7 +161,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
             train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-            model_intra_phase1.train()  # Set model to training mode
+            model_intra_phase2.train()  # Set model to training mode
             
             for phi_batch, w_M_batch, G_M_batch, H_M_batch in train_loader:
                 phi_batch = phi_batch.to(device)
@@ -168,10 +178,10 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
                     # Perform training steps
                     optimizer.zero_grad()
     
-                    model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
+                    model_outputs = model_intra_phase2(phi_batch, w_batch, y)
 
                     # s_stack_batch = model_outputs['s_stack_batch']
-                    loss, _ = custom_loss_intra_phase1(
+                    loss, _ = custom_loss_intra_phase2(
                         constants, G_batch, H_batch, hyperparameters, model_outputs)
     
                     loss.backward()
@@ -179,11 +189,9 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
 
                     total_train_loss += loss.item()
 
-
-
             # Validation phase
-            model_intra_phase1.eval()  # Set model to evaluation mode
-            model_intra_tester = SREL_intra_phase1_tester(constants, model_intra_phase1).to(device)
+            model_intra_phase2.eval()  # Set model to evaluation mode
+            model_intra_tester = SREL_intra_phase2_tester(constants, model_intra_phase2).to(device)
             model_intra_tester.device = device
 
             
@@ -205,17 +213,12 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
                         w_batch = w_M_batch[:,:,m]
                         y = y_M[:,m]
                         
-                        model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
+                        model_outputs = model_intra_phase2(phi_batch, w_batch, y)
 
-                        val_loss, sinr_opt_avg = custom_loss_intra_phase1(
+                        val_loss, sinr_opt_avg = custom_loss_intra_phase2(
                             constants, G_batch, H_batch, hyperparameters, model_outputs)
                         
                         total_val_loss += val_loss.item()
-                        
-                        # model_intra_tester
-                        
-                        # s_stack_batch = model_outputs['s_stack_batch']
-                        # s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
                         
                         sinr_opt_M[m] = sinr_opt_avg.item()
                         
@@ -285,7 +288,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
-            f'mat/intra_phase1/rep_rho/{start_time_tag}'
+            f'mat/intra_phase2/rep_eta/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )
@@ -296,13 +299,13 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     # save model's information
     if save_weights:
         save_dict = {
-            'state_dict': model_intra_phase1.state_dict(),
-            'N_step': model_intra_phase1.N_step,
+            'state_dict': model_intra_phase2.state_dict(),
+            'N_step': model_intra_phase2.N_step,
             # Include any other attributes here
         }
         # save
         dir_weight_save = (
-            f'weights/intra_phase1/rep_rho/{start_time_tag}'
+            f'weights/intra_phase2/rep_eta/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{sinr_db_opt:.2f}dB'
         )

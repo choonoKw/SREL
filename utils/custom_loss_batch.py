@@ -6,6 +6,7 @@ Created on Tue Apr  2 10:23:14 2024
 """
 
 import torch
+from utils.functions import eta_sred
 
 def reciprocal_sinr(G_batch, H_batch, s_batch):
     s_batch_unsqueezed = s_batch.unsqueeze(-1)
@@ -19,3 +20,9 @@ def reciprocal_sinr(G_batch, H_batch, s_batch):
     sHs_batch = torch.abs(torch.sum(torch.conj(s_batch) * Hs_batch, dim=1)).unsqueeze(-1)
      
     return sGs_batch / sHs_batch
+
+# def fidelity_eta(G_batch, H_batch, s_batch):
+#     eta_batch = eta_sred(G_batch, H_batch, s_batch)
+    
+    
+    

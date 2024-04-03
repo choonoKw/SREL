@@ -42,7 +42,7 @@ import time
 import os
 import argparse
 
-from utils.validation import validation
+from utils.validation import validation_intra_phase1
 from utils.save_result_mat import save_result_mat
 
 from utils.format_time import format_time
@@ -265,7 +265,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     plot_losses(training_losses, validation_losses)
     
     # validation
-    worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
+    worst_sinr_stack_list, f_stack_list = validation_intra_phase1(constants,model_intra_tester)
     sinr_db_opt = 10*np.log10(
         np.mean(worst_sinr_stack_list[:,-1])
         )
