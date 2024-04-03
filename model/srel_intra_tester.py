@@ -45,7 +45,7 @@ class SREL_intra_phase1_tester(nn.Module):
                 
                 for m, (G_batch, H_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
                                                            torch.unbind(H_M_batch, dim=3))):
-                    w_batch = w_M_batch[:,m]
+                    w_batch = w_M_batch[:,:,m]
                     y = y_M[:,m]
                     y_batch = y.repeat(batch_size, 1) # cloned for batch_size times
                     x_batch = torch.cat((s_batch.real, s_batch.imag, w_batch.real, w_batch.imag, y_batch), dim=1)
@@ -57,7 +57,7 @@ class SREL_intra_phase1_tester(nn.Module):
                     eta_net_batch += rho_batch*eta_batch
                     
                     # save
-                    rho_M_stack_batch[:,update_step,m] = rho_batch
+                    rho_M_stack_batch[:,update_step,m] = rho_batch.squeeze()
                 
                 
                 # Update phi

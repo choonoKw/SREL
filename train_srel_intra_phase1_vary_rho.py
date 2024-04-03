@@ -42,7 +42,7 @@ import time
 import os
 import argparse
 
-from utils.validation import validation_sred
+from utils.validation import validation
 from utils.save_result_mat import save_result_mat
 
 from utils.format_time import format_time
@@ -53,7 +53,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e1
+    data_num = 1e2
     
     
     # loading constant
@@ -73,7 +73,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_vary_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 2
+    num_epochs = 50
     # Initialize the optimizer
     learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
@@ -105,6 +105,9 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device == 'cuda':
+        torch.cuda.set_device(1)
+        
     print(f"Using device: {device}")
     model_intra_phase1.to(device)
     model_intra_phase1.device = device
@@ -270,7 +273,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     plot_losses(training_losses, validation_losses)
     
     # validation
-    worst_sinr_stack_list, f_stack_list = validation_sred(constants,model_intra_tester)
+    worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
     sinr_db_opt = 10*np.log10(
         np.mean(worst_sinr_stack_list[:,-1])
         )
@@ -318,6 +321,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-5)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-3)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-1)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-5)
     
