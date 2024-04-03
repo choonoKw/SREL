@@ -105,7 +105,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     
     # Check for GPU availability.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device == 'cuda':
+    if device.type == 'cuda':
         torch.cuda.set_device(1)
     else:
         device = torch.device(device)
