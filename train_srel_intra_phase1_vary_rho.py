@@ -64,7 +64,10 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
-
+    # Check for GPU availability.
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        torch.cuda.set_device(1)
     ###############################################################
     ## Control Panel
     ###############################################################
@@ -87,6 +90,9 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
         'lambda_var_rho': lambda_var_rho
     }    
     ###############################################################
+    model_intra_phase1.to(device)
+    model_intra_phase1.device = device
+    
     # for results
     # Get the current time
     start_time_tag = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') 
@@ -98,18 +104,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
-    writer = SummaryWriter(log_dir)
-    
-    # Check for GPU availability.
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == 'cuda':
-        torch.cuda.set_device(1)
-        
-    print(f"Using device: {device}")
-    model_intra_phase1.to(device)
-    model_intra_phase1.device = device
-    
-    
+    writer = SummaryWriter(log_dir)    
     
     # List to store average loss per epoch
     training_losses = []

@@ -64,7 +64,10 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
-
+    # Check for GPU availability.
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if device.type == 'cuda':
+        torch.cuda.set_device(1)
     ###############################################################
     ## Control Panel
     ###############################################################
@@ -73,7 +76,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 2
+    num_epochs = 10
     # Initialize the optimizer
     # learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
@@ -87,6 +90,8 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
         'lambda_var_rho': lambda_var_rho
     }    
     ###############################################################
+    model_intra_phase1.to(device)
+    model_intra_phase1.device = device
     # for results
     # Get the current time
     start_time_tag = datetime.datetime.now().strftime('%Y%m%d-%H%M%S') 
@@ -100,11 +105,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     )
     writer = SummaryWriter(log_dir)
     
-    # Check for GPU availability
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
-    model_intra_phase1.to(device)
-    model_intra_phase1.device = device
+    
     
     
     
