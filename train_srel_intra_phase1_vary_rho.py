@@ -103,10 +103,15 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     dir_weight_save = f'weights/intra_phase1/vary_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
     os.makedirs(dir_weight_save, exist_ok=True)
     
-    # Check for GPU availability
+    # Check for GPU availability.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device == 'cuda':
         torch.cuda.set_device(1)
+    else:
+        device = torch.device(device)
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # if device == 'cuda':
+    #     torch.cuda.set_device(1)
         
     print(f"Using device: {device}")
     model_intra_phase1.to(device)
