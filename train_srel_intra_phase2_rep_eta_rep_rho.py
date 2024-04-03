@@ -64,12 +64,19 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
-
+    ###############################################################
+    ## Load weight
+    ###############################################################
+    # Load the bundled dictionary
+    dir_dict_saved = 'weights/SRED_rep_rho/20240328-145249_Nstep10_batch02_sinr_15.48dB'
+    loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
+                             map_location=device)
+    N_step = loaded_dict['N_step']
     ###############################################################
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 10
+    # N_step = 10
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
@@ -99,6 +106,9 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
+    
+    dir_weight_save = f'weights/intra_phase1/rep_rho/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
+    os.makedirs(dir_weight_save, exist_ok=True)
     
     # Check for GPU availability
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
