@@ -74,7 +74,9 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     ## Load weight
     ###############################################################
     # Load the bundled dictionary
-    dir_dict_saved = 'weights/intra_phase1/rep_rho/data1e+02/20240402-164425_Nstep10_batch02_sinr_13.17dB'
+    dir_dict_saved = (
+        'weights/intra_phase1/rep_rho/'
+        '20240402-164425_Nstep10_batch02_sinr_13.17dB')
     loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
                              map_location=device)
     N_step = loaded_dict['N_step']
@@ -324,15 +326,15 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-9)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-9)
 
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-7)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-7)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-5)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-5)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-3)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-3)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-1)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-1)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-1)
     
