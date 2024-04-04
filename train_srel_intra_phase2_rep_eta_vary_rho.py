@@ -11,16 +11,15 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Subset
 
-# from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.training_dataset import TrainingDataSet
 from utils.load_scalars_from_setup import load_scalars_from_setup
 
 from model.srel_intra_phase1 import SREL_intra_phase1_vary_rho
-from model.srel_intra_tester import SREL_intra_phase1_tester
-# print('SRED_rho with Batch Normalization (BN)')
+from model.srel_intra_phase2 import SREL_rep_eta
+from model.srel_intra_tester import SREL_intra_phase2_tester
 
 
-from utils.custom_loss_intra import custom_loss_intra_phase1
+from utils.custom_loss_intra import custom_loss_intra_phase2
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
 # tensorboard --logdir=runs/SREL --reload_interval 5
@@ -37,12 +36,10 @@ from utils.save_result_mat import save_result_mat
 
 from utils.format_time import format_time
 
-# import torch.nn as nn
 
-def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
+def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
-    # y_M, Ly = load_mapVector('data/data_mapV.mat')
     data_num = 1e1
     
     
@@ -58,30 +55,47 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
         torch.cuda.set_device(1)
+    
+    ###############################################################
+    ## Load weight
+    ###############################################################
+    # Load the bundled dictionary
+    dir_dict_saved = 'weights/intra_phase1/vary_rho/20240404-105549_Nstep10_batch02_sinr_15.44dB'
+    loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
+                             map_location=device)
+    N_step = loaded_dict['N_step']
     ###############################################################
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 10
+    # N_step = 10
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_vary_rho(constants)
-#    model_intra_phase1.apply(init_weights)
+    model_intra_phase1.load_state_dict(loaded_dict['state_dict'])   
+    
+    # freeze model_intra
+    for param in model_intra_phase1.parameters():
+        param.requires_grad = False
+        
+    # Initialize model
+    model_intra_phase2 = SREL_rep_eta(constants, model_intra_phase1)
+    
     num_epochs = 2
     # Initialize the optimizer
     learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
-    optimizer = optim.Adam(model_intra_phase1.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model_intra_phase2.parameters(), lr=learning_rate)
     
     # loss setting
     lambda_sinr = 1e-2
-    # lambda_var_rho = 0
+    # lambda_eta = 1e-5
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
-        'lambda_var_rho': lambda_var_rho
+        'lambda_eta': lambda_eta
     }    
     ###############################################################
-    model_intra_phase1.to(device)
-    model_intra_phase1.device = device
+    model_intra_phase2.to(device)
+    model_intra_phase2.device = device
     
     # for results
     # Get the current time
@@ -90,11 +104,12 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/intra_phase1/vary_rho/data{data_num:.0e}/{start_time_tag}'
+        f'runs/intra_phase2/rep_eta_vary_rho/data{data_num:.0e}/{start_time_tag}'
         f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
         f'_lr_{learning_rate:.0e}'
     )
-    writer = SummaryWriter(log_dir)    
+    writer = SummaryWriter(log_dir)
+    
     
     # List to store average loss per epoch
     training_losses = []
@@ -129,7 +144,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
             train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-            model_intra_phase1.train()  # Set model to training mode
+            model_intra_phase2.train()  # Set model to training mode
             
             for phi_batch, w_M_batch, G_M_batch, H_M_batch in train_loader:
                 phi_batch = phi_batch.to(device)
@@ -146,10 +161,10 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
                     # Perform training steps
                     optimizer.zero_grad()
     
-                    model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
+                    model_outputs = model_intra_phase2(phi_batch, w_batch, y)
 
                     # s_stack_batch = model_outputs['s_stack_batch']
-                    loss, _ = custom_loss_intra_phase1(
+                    loss, _ = custom_loss_intra_phase2(
                         constants, G_batch, H_batch, hyperparameters, model_outputs)
     
                     loss.backward()
@@ -157,11 +172,9 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
 
                     total_train_loss += loss.item()
 
-
-
             # Validation phase
-            model_intra_phase1.eval()  # Set model to evaluation mode
-            model_intra_tester = SREL_intra_phase1_tester(constants, model_intra_phase1).to(device)
+            model_intra_phase2.eval()  # Set model to evaluation mode
+            model_intra_tester = SREL_intra_phase2_tester(constants, model_intra_phase2).to(device)
             model_intra_tester.device = device
 
             
@@ -183,33 +196,16 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
                         w_batch = w_M_batch[:,:,m]
                         y = y_M[:,m]
                         
-                        model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
+                        model_outputs = model_intra_phase2(phi_batch, w_batch, y)
 
-                        val_loss, sinr_opt_avg = custom_loss_intra_phase1(
+                        val_loss, sinr_opt_avg = custom_loss_intra_phase2(
                             constants, G_batch, H_batch, hyperparameters, model_outputs)
                         
                         total_val_loss += val_loss.item()
                         
-                        # model_intra_tester
-                        
-                        # s_stack_batch = model_outputs['s_stack_batch']
-                        # s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
-                        
                         sinr_opt_M[m] = sinr_opt_avg.item()
                         
                     sum_of_worst_sinr_avg += np.min(sinr_opt_M)
-    
-                    # model_outputs = model_intra_tester(
-                    #     phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch
-                    #     )
-                    
-                    # s_stack_batch = model_outputs['s_stack_batch']
-                    # s_optimal_batch = s_stack_batch[:,-1,:]
-                    # sum_of_worst_sinr_avg += np.sum(
-                    #     worst_sinr_function(
-                    #         constants, s_optimal_batch, G_M_batch, H_M_batch)
-                    #     )/batch_size
-                    
                     
                     
         # Compute average loss for the epoch and Log the loss
@@ -237,11 +233,6 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
         formatted_time_left = format_time(time_left)
         print(f"{formatted_time_left} left")
         
-        # print(f'Epoch [{epoch+1}/{num_epochs}], '
-              # f'Train Loss = {average_train_loss:.4f}, '
-              # f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
-        
-        
         
         
     # End time
@@ -256,16 +247,13 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
-    sinr_db_opt = 10*np.log10(
-        np.mean(worst_sinr_stack_list[:,-1])
-        )
     
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
-            f'mat/intra_phase1/vary_rho/{start_time_tag}'
+            f'mat/intra_phase2/rep_eta_vary_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{sinr_db_opt:.2f}dB'
+            f'_sinr_{worst_sinr_avg_db:.2f}dB'
         )
         os.makedirs(dir_mat_save, exist_ok=True)
         save_result_mat(os.path.join(dir_mat_save, matfilename), worst_sinr_stack_list, f_stack_list)
@@ -274,15 +262,15 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     # save model's information
     if save_weights:
         save_dict = {
-            'state_dict': model_intra_phase1.state_dict(),
-            'N_step': model_intra_phase1.N_step,
+            'state_dict': model_intra_phase2.state_dict(),
+            'N_step': model_intra_phase2.N_step,
             # Include any other attributes here
         }
         # save
         dir_weight_save = (
-            f'weights/intra_phase1/vary_rho/{start_time_tag}'
+            f'weights/intra_phase2/rep_eta_vary_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{sinr_db_opt:.2f}dB'
+            f'_sinr_{worst_sinr_avg_db:.2f}dB'
         )
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
@@ -302,14 +290,19 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-9)
+
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-7)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-3)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-5)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-1)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-3)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-5)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-1)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e1)
+    
 
 
