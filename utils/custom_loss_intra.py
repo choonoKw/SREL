@@ -82,7 +82,7 @@ def custom_loss_intra_phase2(constants, G_batch, H_batch, hyperparameters, model
     loss = (
         f_sinr_opt
         + hyperparameters['lambda_sinr']*f_sinr_sum/(N_step-1)
-        + hyperparameters['lambda_eta']*f_eta_sum
+        + hyperparameters['lambda_eta']*f_eta_sum/N_step
         )
     
     loss_avg = loss / batch_size 

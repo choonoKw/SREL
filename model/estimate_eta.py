@@ -29,3 +29,22 @@ class Estimate_eta(nn.Module):
 
     def forward(self, x):
         return self.layers(x)
+    
+class Estimate_etaL(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(Estimate_etaL, self).__init__()
+        # Define layers for estimating descent direction eta
+        self.layers = nn.Sequential(
+            nn.Linear(input_dim, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, output_dim),  # Output dimension matches phi 128
+        )
+
+    def forward(self, x):
+        return self.layers(x)

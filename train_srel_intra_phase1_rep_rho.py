@@ -259,17 +259,17 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     plot_losses(training_losses, validation_losses)
     
     # validation
-    worst_sinr_stack_list, f_stack_list = validation_intra_phase1(constants,model_intra_tester)
-    sinr_db_opt = 10*np.log10(
-        np.mean(worst_sinr_stack_list[:,-1])
-        )
+    worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
+    # sinr_db_opt = 10*np.log10(
+    #     np.mean(worst_sinr_stack_list[:,-1])
+    #     )
     
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
             f'mat/intra_phase1/rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{sinr_db_opt:.2f}dB'
+            f'_sinr_{worst_sinr_avg_db:.2f}dB'
         )
         os.makedirs(dir_mat_save, exist_ok=True)
         save_result_mat(os.path.join(dir_mat_save, matfilename), worst_sinr_stack_list, f_stack_list)
@@ -286,7 +286,7 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
         dir_weight_save = (
             f'weights/intra_phase1/rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{sinr_db_opt:.2f}dB'
+            f'_sinr_{worst_sinr_avg_db:.2f}dB'
         )
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
