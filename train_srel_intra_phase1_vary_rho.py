@@ -43,7 +43,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e1
+    data_num = 1e2
     
     
     # loading constant
@@ -66,7 +66,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_vary_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 2
+    num_epochs = 50
     # Initialize the optimizer
     learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
@@ -304,12 +304,12 @@ if __name__ == "__main__":
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-5)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-3)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-3)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-1)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_var_rho=1e-1)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-5)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, learning_rate=1e-5)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-5)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=7, learning_rate=1e-5)
 
 
