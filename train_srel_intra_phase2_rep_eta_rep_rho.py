@@ -94,7 +94,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     # Initialize model
     model_intra_phase2 = SREL_rep_eta(constants, model_intra_phase1)
     
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
