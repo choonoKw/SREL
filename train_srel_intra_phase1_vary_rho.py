@@ -14,13 +14,6 @@ from torch.utils.data import DataLoader, Subset
 # from utils.complex_valued_dataset import ComplexValuedDataset
 from utils.training_dataset import TrainingDataSet
 from utils.load_scalars_from_setup import load_scalars_from_setup
-# from utils.load_mapVector import load_mapVector
-
-# from model.sred_rho import SRED_rho
-# print('SRED_rho OG.')
-
-# from model.sred_rho_DO import SRED_rho
-# print('SRED_rho with Drop Out (DO)')
 
 from model.srel_intra_phase1 import SREL_intra_phase1_vary_rho
 from model.srel_intra_tester import SREL_intra_phase1_tester
@@ -28,9 +21,6 @@ from model.srel_intra_tester import SREL_intra_phase1_tester
 
 
 from utils.custom_loss_intra import custom_loss_intra_phase1
-# from utils.worst_sinr import worst_sinr_function
-
-# from utils.worst_sinr import worst_sinr_function
 
 from torch.utils.tensorboard import SummaryWriter #tensorboard
 # tensorboard --logdir=runs/SREL --reload_interval 5
@@ -42,7 +32,7 @@ import time
 import os
 import argparse
 
-from utils.validation import validation_intra_phase1
+from utils.validation import validation
 from utils.save_result_mat import save_result_mat
 
 from utils.format_time import format_time
@@ -53,7 +43,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -76,7 +66,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_var_rho):
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_vary_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')

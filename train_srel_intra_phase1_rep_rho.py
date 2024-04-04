@@ -42,7 +42,7 @@ import time
 import os
 import argparse
 
-from utils.validation import validation_intra_phase1
+from utils.validation import validation
 from utils.save_result_mat import save_result_mat
 
 from utils.format_time import format_time
