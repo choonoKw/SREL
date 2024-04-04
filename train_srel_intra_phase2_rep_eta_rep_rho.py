@@ -124,9 +124,6 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     )
     writer = SummaryWriter(log_dir)
     
-    dir_weight_save = f'weights/intra_phase2/rep_eta/data{data_num:.0e}/Nstep{N_step:02d}_{start_time_tag}'
-    os.makedirs(dir_weight_save, exist_ok=True)
-    
     
     # List to store average loss per epoch
     training_losses = []

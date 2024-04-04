@@ -106,9 +106,6 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
     writer = SummaryWriter(log_dir)
     
     
-    
-    
-    
     # List to store average loss per epoch
     training_losses = []
     validation_losses = []
@@ -249,12 +246,6 @@ def main(save_weights, save_logs, save_mat, batch_size, learning_rate):
         time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
         formatted_time_left = format_time(time_left)
         print(f"{formatted_time_left} left")
-        
-        # print(f'Epoch [{epoch+1}/{num_epochs}], '
-              # f'Train Loss = {average_train_loss:.4f}, '
-              # f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
-        
-        
         
         
     # End time
