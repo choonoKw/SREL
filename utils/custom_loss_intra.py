@@ -68,7 +68,7 @@ def custom_loss_intra_phase2(constants, G_batch, H_batch, hyperparameters, model
         eta_batch = eta_stack_batch[:,update_step,:]
         eta_tilde_batch = eta_sred(G_batch, H_batch, s_batch)
         
-        f_eta_sum += torch.sum(torch.norm(eta_tilde_batch - eta_batch) ** 2)
+        f_eta_sum += torch.norm(eta_tilde_batch - eta_batch) ** 2
         
         # f_rho_sum += hyperparameters['lambda_var_rho']*var_rho_avg
         

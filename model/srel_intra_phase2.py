@@ -30,7 +30,7 @@ class SREL_vary_eta(nn.Module):
         
         # Dynamically create the modules for estimating eta and rho
         self.est_eta_modules = nn.ModuleList([
-                    Estimate_eta(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
+                    Estimate_eta(2*self.Ls + 2*constants['Lw'] + constants['Ly'], self.Ls)
                     for _ in range(self.N_step)
                 ])
         
@@ -61,7 +61,7 @@ class SREL_vary_eta(nn.Module):
                 rho_batch = self.model_intra_phase1.est_rho_modules[update_step](x_batch)
 
 
-                eta_stack_batch[:,update_step] = eta_batch
+                eta_stack_batch[:,update_step,:] = eta_batch
     
                 # Update phi
                 phi_batch = phi_batch - rho_batch*eta_batch  
@@ -83,7 +83,7 @@ class SREL_vary_eta(nn.Module):
                 rho_batch = self.model_intra_phase1.est_rho_modules(x_batch)
 
 
-                eta_stack_batch[:,update_step] = eta_batch
+                eta_stack_batch[:,update_step,:] = eta_batch
     
                 # Update phi
                 phi_batch = phi_batch - rho_batch*eta_batch  
@@ -113,7 +113,7 @@ class SREL_rep_eta(nn.Module):
         self.model_intra_phase1 = model_intra_phase1
         
         # Dynamically create the modules for estimating eta and rho
-        self.est_eta_modules = Estimate_eta(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
+        self.est_eta_modules = Estimate_eta(2*self.Ls + 2*constants['Lw'] + constants['Ly'], self.Ls)
         
         
     def forward(self, phi_batch, w_batch, y):
@@ -142,7 +142,7 @@ class SREL_rep_eta(nn.Module):
                 rho_batch = self.model_intra_phase1.est_rho_modules[update_step](x_batch)
 
 
-                eta_stack_batch[:,update_step] = eta_batch
+                eta_stack_batch[:,update_step,:] = eta_batch
     
                 # Update phi
                 phi_batch = phi_batch - rho_batch*eta_batch  
@@ -164,7 +164,7 @@ class SREL_rep_eta(nn.Module):
                 rho_batch = self.model_intra_phase1.est_rho_modules(x_batch)
 
 
-                eta_stack_batch[:,update_step] = eta_batch
+                eta_stack_batch[:,update_step,:] = eta_batch
     
                 # Update phi
                 phi_batch = phi_batch - rho_batch*eta_batch  
