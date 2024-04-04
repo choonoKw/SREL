@@ -74,7 +74,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     ## Load weight
     ###############################################################
     # Load the bundled dictionary
-    dir_dict_saved = 'weights/intra_phase1/rep_rho/data1e+02/20240403-132816_Nstep10_batch02_sinr_15.47dB'
+    dir_dict_saved = 'weights/intra_phase1/rep_rho/data1e+02/20240402-164425_Nstep10_batch02_lr_1e-05'
     loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
                              map_location=device)
     N_step = loaded_dict['N_step']
