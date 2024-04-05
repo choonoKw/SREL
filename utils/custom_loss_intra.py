@@ -6,7 +6,7 @@ Created on Tue Feb 27 16:10:00 2024
 """
 
 import torch
-# import numpy as np
+import numpy as np
 
 # from utils.custom_loss import reciprocal_sinr, regularizer_eta
 
@@ -50,6 +50,45 @@ def custom_loss_intra_phase1(constants, G_batch, H_batch, hyperparameters, model
     
     return loss_avg, sinr_opt_avg
 
+def custom_loss_intra_phase1_mono(constants, G_batch, H_batch, hyperparameters, model_outputs):
+    N_step = constants['N_step']
+    device = G_batch.device
+    s_stack_batch = model_outputs['s_stack_batch'].to(device)
+    rho_stack_batch = model_outputs['rho_stack_batch'].to(device)
+    batch_size = s_stack_batch.size(0)
+    
+    f_sinr_sum = 0.0
+    
+    s_batch =  s_stack_batch[:,0,:]
+    f_sinr_t1 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+    
+    for update_step in range(N_step-1):
+        s_batch =  s_stack_batch[:,update_step+1,:]
+            
+        f_sinr_t2 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+        f_sinr_sum += np.exp(
+            hyperparameters['lambda_mono']*(f_sinr_t2-f_sinr_t1)
+            )
+        
+    s_batch =  s_stack_batch[:,-1,:]
+    
+    f_sinr_opt_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
+    f_sinr_opt = torch.sum(f_sinr_opt_batch)
+    
+    sinr_opt_avg = torch.sum(1/f_sinr_opt_batch)/batch_size
+    
+    var_rho_avg = torch.sum(torch.var(rho_stack_batch, dim=0, unbiased=False))
+    
+    loss = (
+        f_sinr_opt
+        + hyperparameters['lambda_sinr']*f_sinr_sum/(N_step-1)
+        + hyperparameters['lambda_var_rho']*var_rho_avg
+        )
+    
+    loss_avg = loss / batch_size 
+    
+    return loss_avg, sinr_opt_avg
+
 def custom_loss_intra_phase2(constants, G_batch, H_batch, hyperparameters, model_outputs):
     N_step = constants['N_step']
     # device = G_batch.device
@@ -64,6 +103,52 @@ def custom_loss_intra_phase2(constants, G_batch, H_batch, hyperparameters, model
         s_batch =  s_stack_batch[:,update_step+1,:]
             
         f_sinr_sum += torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+        
+        eta_batch = eta_stack_batch[:,update_step,:]
+        eta_tilde_batch = eta_sred(G_batch, H_batch, s_batch)
+        
+        f_eta_sum += torch.norm(eta_tilde_batch - eta_batch) ** 2
+        
+        # f_rho_sum += hyperparameters['lambda_var_rho']*var_rho_avg
+        
+    s_batch =  s_stack_batch[:,-1,:]
+    
+    f_sinr_opt_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
+    f_sinr_opt = torch.sum(f_sinr_opt_batch)
+    
+    sinr_opt_avg = torch.sum(1/f_sinr_opt_batch)/batch_size
+    
+    loss = (
+        f_sinr_opt
+        + hyperparameters['lambda_sinr']*f_sinr_sum/(N_step-1)
+        + hyperparameters['lambda_eta']*f_eta_sum/N_step
+        )
+    
+    loss_avg = loss / batch_size 
+    
+    return loss_avg, sinr_opt_avg
+
+def custom_loss_intra_phase2_mono(constants, G_batch, H_batch, hyperparameters, model_outputs):
+    N_step = constants['N_step']
+    # device = G_batch.device
+    s_stack_batch = model_outputs['s_stack_batch']
+    eta_stack_batch = model_outputs['eta_stack_batch']
+    batch_size = s_stack_batch.size(0)
+    
+    
+    f_sinr_sum = 0.0
+    f_eta_sum = 0.0
+    
+    s_batch =  s_stack_batch[:,0,:]
+    f_sinr_t1 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+    
+    for update_step in range(N_step-1):
+        s_batch =  s_stack_batch[:,update_step+1,:]
+            
+        f_sinr_t2 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+        f_sinr_sum += np.exp(
+            hyperparameters['lambda_mono']*(f_sinr_t2-f_sinr_t1)
+            )
         
         eta_batch = eta_stack_batch[:,update_step,:]
         eta_tilde_batch = eta_sred(G_batch, H_batch, s_batch)
