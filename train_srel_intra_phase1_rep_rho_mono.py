@@ -77,7 +77,7 @@ def main(save_weights, save_logs, save_mat,
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     # learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
@@ -313,16 +313,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e-1)
-    
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e-2)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e1)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e0)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e2)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e1)
 
 

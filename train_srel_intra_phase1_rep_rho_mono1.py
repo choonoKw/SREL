@@ -312,13 +312,14 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e0)
-    
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e0)
+
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-3, lambda_mono=1e0)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e0)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e1)
 
 
