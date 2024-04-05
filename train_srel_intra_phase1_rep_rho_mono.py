@@ -91,6 +91,10 @@ def main(save_weights, save_logs, save_mat,
         'lambda_mono': lambda_mono,
         'lambda_var_rho': lambda_var_rho
     }    
+    
+    print(f'learning_rate={learning_rate:.0e}, '
+          f'lambda_sinr={lambda_sinr:.0e}, '
+          f'lambda_mono={lambda_mono:.0e}')
     ###############################################################
     model_intra_phase1.to(device)
     model_intra_phase1.device = device
@@ -318,9 +322,9 @@ if __name__ == "__main__":
     #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e2, lambda_mono=1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e1)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e-1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e2)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e0, lambda_mono=1e-2)
 
 
