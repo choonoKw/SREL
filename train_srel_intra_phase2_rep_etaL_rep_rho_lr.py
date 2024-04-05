@@ -68,7 +68,7 @@ def main(save_weights, save_logs, save_mat, learning_rate, lambda_eta):
     # Check for GPU availability.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        torch.cuda.set_device(0)
+        torch.cuda.set_device(1)
     
     ###############################################################
     ## Load weight
