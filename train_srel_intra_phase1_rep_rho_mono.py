@@ -105,8 +105,10 @@ def main(save_weights, save_logs, save_mat,
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/intra_phase1/rep_rho/data{data_num:.0e}/{start_time_tag}'
-        f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
+        f'runs/intra_phase1/rep_rho/data{data_num:.0e}/'
+        f'lambda_sinr{lambda_sinr:.0e}/'
+        f'{start_time_tag}'
+        f'_lambda_mono{lambda_mono:.0e}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)

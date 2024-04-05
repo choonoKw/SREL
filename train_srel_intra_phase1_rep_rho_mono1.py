@@ -77,7 +77,7 @@ def main(save_weights, save_logs, save_mat,
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     # learning_rate=1e-5
     print(f'learning_rate={learning_rate:.0e}')
@@ -105,8 +105,10 @@ def main(save_weights, save_logs, save_mat,
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/intra_phase1/rep_rho/data{data_num:.0e}/{start_time_tag}'
-        f'_Nstep{constants["N_step"]:02d}_batch{batch_size:02d}'
+        f'runs/intra_phase1/rep_rho/data{data_num:.0e}/'
+        f'lambda_sinr{lambda_sinr:.0e}/'
+        f'{start_time_tag}'
+        f'_lambda_mono{lambda_mono:.0e}'
         f'_lr_{learning_rate:.0e}'
     )
     writer = SummaryWriter(log_dir)
