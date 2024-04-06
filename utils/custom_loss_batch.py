@@ -21,6 +21,9 @@ def reciprocal_sinr(G_batch, H_batch, s_batch):
      
     return sGs_batch / sHs_batch
 
+
+
+
 # def fidelity_eta(G_batch, H_batch, s_batch):
 #     eta_batch = eta_sred(G_batch, H_batch, s_batch)
     
