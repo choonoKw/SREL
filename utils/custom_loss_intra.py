@@ -60,15 +60,18 @@ def custom_loss_intra_phase1_mono(constants, G_batch, H_batch, hyperparameters, 
     f_sinr_sum = 0.0
     
     s_batch =  s_stack_batch[:,0,:]
-    f_sinr_t1 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+    f_sinr_t1_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
     
     for update_step in range(N_step):
         s_batch =  s_stack_batch[:,update_step+1,:]
             
-        f_sinr_t2 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
-        f_sinr_sum += np.exp(
-            hyperparameters['lambda_mono']*(f_sinr_t2-f_sinr_t1)
+        f_sinr_t2_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
+        # f_sinr_t2 = torch.sum(reciprocal_sinr(G_batch, H_batch, s_batch)).item()
+        f_sinr_sum += torch.sum(
+            torch.exp(
+                hyperparameters['lambda_mono']*(f_sinr_t2_batch-f_sinr_t1_batch)
             )
+        )/batch_size
         
     s_batch =  s_stack_batch[:,-1,:]
     
