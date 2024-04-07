@@ -253,11 +253,13 @@ def main(save_weights, save_logs, save_mat,
                  f'Train Loss = {average_train_loss_db:.2f} dB, '
                  f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
                  f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+            
+            time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
+            time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
+            formatted_time_left = format_time(time_left)
+            print(f"{formatted_time_left} left")
         
-        time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
-        time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
-        formatted_time_left = format_time(time_left)
-        print(f"{formatted_time_left} left")
+        
         
         
     # End time
@@ -279,7 +281,7 @@ def main(save_weights, save_logs, save_mat,
         with open(file_name, 'a') as file:
             file.write(formatted_string + '\n') 
     
-    plot_losses(training_losses, validation_losses)
+    # plot_losses(training_losses, validation_losses)
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)

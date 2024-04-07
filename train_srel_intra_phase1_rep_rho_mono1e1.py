@@ -77,14 +77,14 @@ def main(save_weights, save_logs, save_mat,
     constants['N_step'] = N_step
     model_intra_phase1 = SREL_intra_phase1_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 100
+    num_epochs = 50
     # Initialize the optimizer
     # learning_rate=1e-5
     # print(f'learning_rate={learning_rate:.0e}')
     optimizer = optim.Adam(model_intra_phase1.parameters(), lr=learning_rate)
     
     # loss setting
-    # lambda_sinr = 1e-0
+    # lambda_sinr = 1e-1
     lambda_var_rho = 0
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
@@ -246,15 +246,19 @@ def main(save_weights, save_logs, save_mat,
     
         # Log the loss        
         worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
-        print(f'Epoch [{epoch+1}/{num_epochs}], '
-             f'Train Loss = {average_train_loss_db:.2f} dB, '
-             f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
-             f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+        epoch_counter = np.round(num_epochs/10)
+        if epoch == 0 or (epoch+1) % epoch_counter == 0:
+            print(f'Epoch [{epoch+1}/{num_epochs}], '
+                 f'Train Loss = {average_train_loss_db:.2f} dB, '
+                 f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
+                 f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+            
+            time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
+            time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
+            formatted_time_left = format_time(time_left)
+            print(f"{formatted_time_left} left")
         
-        time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
-        time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
-        formatted_time_left = format_time(time_left)
-        print(f"{formatted_time_left} left")
+        
         
         
     # End time
@@ -276,7 +280,7 @@ def main(save_weights, save_logs, save_mat,
         with open(file_name, 'a') as file:
             file.write(formatted_string + '\n') 
     
-    plot_losses(training_losses, validation_losses)
+    # plot_losses(training_losses, validation_losses)
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
@@ -329,15 +333,15 @@ if __name__ == "__main__":
     
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-0, lambda_mono=1e0)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e0)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-0, lambda_mono=1e-1)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-0, lambda_mono=1e-2)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-2)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-0, lambda_mono=1e-3)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-3)
     
 
