@@ -34,9 +34,9 @@ def load_scalars_from_setup(file_path):
 def load_param_from_setup(file_path, device):
     # Load the .mat file
     data = loadmat(file_path, squeeze_me=True)
-    struct_c = Struct_c(data)
-    struct_m = Struct_m(data)
-    struct_k = Struct_k(data)
+    struct_c = Struct_c(data).to(device)
+    struct_m = Struct_m(data).to(device)
+    struct_k = Struct_k(data).to(device)
     
     # matrices
     aqaqh = torch.tensor(data['aqaqh'], dtype=torch.complex64).to(device)
