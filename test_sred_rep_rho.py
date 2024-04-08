@@ -47,7 +47,7 @@ from model.srel_intra_infer import SREL_intra_phase1_infer
 import os
 import argparse
 
-from utils.test_joint_design import test
+from utils.joint_design import test
 # from utils.save_result_mat import save_result_mat
 
 # from utils.format_time import format_time

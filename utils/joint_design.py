@@ -19,6 +19,7 @@ from sred.function_of_w import make_Phi_M, make_Theta_M
 
 
 def test(constants, model_test, eps_f):
+    device = model_test.device
     
     struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon = load_param_from_setup(
         'data/data_setup.mat')
@@ -31,7 +32,7 @@ def test(constants, model_test, eps_f):
     
     y_M = dataset.y_M
     
-    N_iter = 200
+    N_iter = 20
     
     f_sinr_stack_list = np.zeros((N_data, N_iter))    
     
@@ -57,11 +58,11 @@ def test(constants, model_test, eps_f):
                 
         #         f_sinr_stack_list[idx_data,idx_iter] = f_sinr
     with torch.no_grad():            
-        G_M_list = dataset.G_M_list
-        H_M_list = dataset.H_M_list
-        phi_list = dataset.phi_list
-        w_M_list = dataset.w_M_list
-        y_M = dataset.y_M
+        G_M_list = dataset.G_M_list.to(device)
+        H_M_list = dataset.H_M_list.to(device)
+        phi_list = dataset.phi_list.to(device)
+        w_M_list = dataset.w_M_list.to(device)
+        y_M = dataset.y_M.to(device)
         
         for idx_data, (G_M, H_M, phi, w_M) in enumerate(zip(
                 torch.unbind(G_M_list, dim=-1),torch.unbind(H_M_list, dim=-1),
