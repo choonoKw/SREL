@@ -34,7 +34,7 @@ def eta_sred(G, H, s):
     sGs = torch.abs(torch.vdot(s, Gs)) 
     sHs = torch.abs(torch.vdot(s, Hs)) 
     
-    eta = torch.real(2 / (sHs ** 2) * torch.imag( (sHs * Gs - sGs * Hs) * torch.conj(s) ) )
+    eta = 2 / (sHs ** 2) * torch.imag( (sHs * Gs - sGs * Hs) * torch.conj(s) )
     
     return eta
 
