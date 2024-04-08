@@ -99,7 +99,7 @@ def make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon):
         # Exclude m from the list of p values
         p_list = [p for p in range(M) if p != m]
         for p in p_list:
-            Psi_temp = torch.zeros((Lj*Nr, Lj*Nr), dtype=torch.complex64)
+            Psi_temp = torch.zeros((Lj*Nr, Lj*Nr), dtype=torch.complex64).to(device)
             rp = lm[p] - lm[0]
             for n1 in range(rp + 1, Lj + 1):
                 for n2 in range(rp + 1, Lj + 1):
