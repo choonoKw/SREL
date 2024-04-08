@@ -25,7 +25,7 @@ def make_Sigma(struct_c,struct_k,S_tilde,bqhbq):
 
     # sum_{k=1}^K
     for k in range(K):
-        Sigma_temp = torch.zeros((Lj * Nr, Lj * Nr), dtype=torch.complex64)
+        Sigma_temp = torch.zeros((Lj * Nr, Lj * Nr), dtype=torch.complex64).to(device)
         rk = abs(r[k])
         if r[k] < 0:
             for n1 in range(1, Lj - rk + 1):
@@ -51,6 +51,7 @@ def make_Sigma(struct_c,struct_k,S_tilde,bqhbq):
     return Sigma
 
 def make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq):
+    device = S_tilde.device
     Nr = struct_c.Nr;
     
     # target information
@@ -61,10 +62,10 @@ def make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq):
     Lj = struct_c.Lj;
     
     # Initialize Gamma_M
-    Gamma_M = torch.zeros((Lj * Nr, Lj * Nr, M), dtype=torch.complex64)
+    Gamma_M = torch.zeros((Lj * Nr, Lj * Nr, M), dtype=torch.complex64).to(device)
     
     for m in range(M):
-        Gamma_temp = torch.zeros((Lj * Nr, Lj * Nr), dtype=torch.complex64)
+        Gamma_temp = torch.zeros((Lj * Nr, Lj * Nr), dtype=torch.complex64).to(device)
         rm = lm[m] - lm[0]
         for n1 in range(rm + 1, Lj + 1):
             for n2 in range(rm + 1, Lj + 1):
