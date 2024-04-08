@@ -22,7 +22,7 @@ def test(constants, model_test, eps_f):
     device = model_test.device
     
     struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon = load_param_from_setup(
-        'data/data_setup.mat')
+        'data/data_setup.mat', device)
     
     dataset = TrainingDataSet('data/data_trd_1e+02_val.mat')
     N_data = len(dataset)

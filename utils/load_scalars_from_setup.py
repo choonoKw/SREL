@@ -31,9 +31,9 @@ def load_scalars_from_setup(file_path):
     
     return constants
 
-def load_param_from_setup(file_path):
+def load_param_from_setup(file_path, device):
     # Load the .mat file
-    data = loadmat(file_path, squeeze_me=True)
+    data = loadmat(file_path, squeeze_me=True).to(device)
     struct_c = Struct_c(data)
     struct_m = Struct_m(data)
     struct_k = Struct_k(data)
