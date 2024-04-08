@@ -68,13 +68,14 @@ def derive_w(struct_c,Psi_m,Gamma_m):
     return w_mList, W_m_tilde
 
 def derive_s(constants, phi, struct_c, struct_m):
+    device = phi.device
     s = constants['modulus']*torch.exp(1j *phi) 
     
-    Nt = struct_c.Nt
-    M = struct_c.M
-    Lj = struct_c.Lj
+    Nt = struct_c.Nt.to(device)
+    M = struct_c.M.to(device)
+    Lj = struct_c.Lj.to(device)
     
-    lm = struct_m.lm
+    lm = struct_m.lm.to(device)
     
     # Ensure s is unsqueezed to mimic column vector shape for concatenation
     s_extended = torch.cat((s.unsqueeze(1), torch.zeros(Nt * (lm[M-1] - lm[0]), 1, dtype=torch.complex64)), 0)
