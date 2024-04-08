@@ -80,7 +80,7 @@ def derive_s(constants, phi, struct_c, struct_m):
     # Ensure s is unsqueezed to mimic column vector shape for concatenation
     s_extended = torch.cat(
         (s.unsqueeze(1), torch.zeros(
-            Nt * (lm[M-1] - lm[0]), 1, dtype=torch.complex64)
+            Nt * (lm[M-1] - lm[0]), 1, dtype=torch.complex64).to(device)
         ), 0)
     
     # Reshape s_extended to Nt x Lj
