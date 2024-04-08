@@ -79,7 +79,7 @@ def make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq):
     return Gamma_M
 
 def make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon):
-    
+    device = S_tilde.device
     Nr = struct_c.Nr;
     
     # target information
@@ -90,7 +90,7 @@ def make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon):
     Lj = struct_c.Lj;
 
     # Initialize Psi_M
-    Psi_M = torch.zeros((Lj*Nr, Lj*Nr, M), dtype=torch.complex64)
+    Psi_M = torch.zeros((Lj*Nr, Lj*Nr, M), dtype=torch.complex64).to(device)
     
     for m in range(M):
         # Exclude m from the list of p values
