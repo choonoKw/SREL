@@ -27,3 +27,21 @@ def eta_sred(G_batch, H_batch, s_batch):
         )
     
     return eta_batch
+
+def sum_of_sinr_reciprocal(G_M_batch, H_M_batch, s_batch):
+    s_batch_unsqueezed = s_batch.unsqueeze(-1)
+    
+    f_sinr = 0.0
+    for m, (G_batch, H_batch) in enumerate(zip(
+            torch.unbind(G_M_batch, dim=-1),torch.unbind(H_M_batch, dim=-1)
+            )): 
+        
+        Gs_batch = torch.bmm(G_batch, s_batch_unsqueezed).squeeze()
+        Hs_batch = torch.bmm(H_batch, s_batch_unsqueezed).squeeze()
+        
+        sGs_batch = torch.abs(torch.sum(torch.conj(s_batch) * Gs_batch, dim=1)).unsqueeze(-1)
+        sHs_batch = torch.abs(torch.sum(torch.conj(s_batch) * Hs_batch, dim=1)).unsqueeze(-1)
+         
+        f_sinr += sGs_batch / sHs_batch
+     
+    return f_sinr

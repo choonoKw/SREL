@@ -52,7 +52,7 @@ def main(save_weights, save_logs, save_mat,
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -75,7 +75,7 @@ def main(save_weights, save_logs, save_mat,
     constants['N_step'] = N_step
     model_intra_phase1 = SRED_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     # learning_rate=1e-5
     # print(f'learning_rate={learning_rate:.0e}')
@@ -267,16 +267,16 @@ def main(save_weights, save_logs, save_mat,
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
-    # sinr_db_opt = 10*np.log10(
-    #     np.mean(worst_sinr_stack_list[:,-1])
-    #     )
+    sinr_db_opt = 10*np.log10(
+        np.mean(worst_sinr_stack_list[:,-1])
+        )
     
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
             f'mat/sred_rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{worst_sinr_avg_db:.2f}dB'
+            f'_sinr_{sinr_db_opt:.2f}dB'
         )
         os.makedirs(dir_mat_save, exist_ok=True)
         save_result_mat(os.path.join(dir_mat_save, matfilename), 
@@ -294,7 +294,7 @@ def main(save_weights, save_logs, save_mat,
         dir_weight_save = (
             f'weights/sred_rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
-            f'_sinr_{worst_sinr_avg_db:.2f}dB'
+            f'_sinr_{sinr_db_opt:.2f}dB'
         )
         os.makedirs(dir_weight_save, exist_ok=True)
         torch.save(save_dict, os.path.join(dir_weight_save, 'model_with_attrs.pth'))
@@ -324,11 +324,11 @@ if __name__ == "__main__":
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
     #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-2)
     
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-3)
+    
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-3)
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-4)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-4)
-    
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-5)

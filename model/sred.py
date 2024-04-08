@@ -113,6 +113,102 @@ class SRED_rep_rho(nn.Module):
         }
         
         return model_outputs
+    
+class SRED_vary_rho(nn.Module):
+    def __init__(self, constants):
+        super(SRED_vary_rho, self).__init__()
+        # Unpack constants from the dictionary and store as attributes
+        self.M = constants['M']
+        self.Ls = constants['Nt']*constants['N']
+        self.N_step = constants['N_step']
+        self.modulus = constants['modulus']
+        
+        # Dynamically create the modules for estimating eta and rho
+        self.est_rho_modules = Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
+        # self.est_rho_modules = Estimate_rho(2*self.Ls + 2*constants['Lw'] + constants['Ly'], 1)
+        
+        
+        
+    def forward(self, phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch):
+        batch_size = phi_batch.size(0)
+        N_step = self.N_step
+        modulus = self.modulus
+        M = self.M
+        Ls = self.Ls
+        
+        y_batch_M = y_M.unsqueeze(1).expand(-1, batch_size, -1).transpose(0, 2)
+        
+        # Initialize the list
+        s_stack_batch = torch.zeros(batch_size, N_step+1, Ls, dtype=torch.complex64).to(self.device)
+        rho_M_stack_batch = torch.zeros(batch_size, N_step, M).to(self.device)
+        
+        if isinstance(self.est_rho_modules, ModuleList):
+            # model_intra_phase1_phase1 has various NN modules.
+        
+            # Repeat the update process N_step times
+            for update_step in range(N_step):
+                s_batch = modulus*torch.exp(1j *phi_batch)    
+                
+                eta_net_batch = torch.zeros(batch_size, Ls).to(self.device)
+                
+                for m, (G_batch, H_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
+                                                           torch.unbind(H_M_batch, dim=3))):
+                    w_batch = w_M_batch[:,:,m]
+                    
+                    y_batch = y_batch_M[m]
+                    x_batch = torch.cat((s_batch.real, s_batch.imag, w_batch.real, w_batch.imag, y_batch), dim=1)
+                    
+                    rho_batch = self.est_rho_modules[update_step](x_batch)
+                    
+                    eta_batch = eta_sred(G_batch, H_batch, s_batch)
+                    
+                    eta_net_batch += rho_batch*eta_batch
+                    
+                    # save
+                    rho_M_stack_batch[:,update_step,m] = rho_batch.squeeze()
+                
+                
+                # Update phi
+                phi_batch = phi_batch - rho_batch*eta_net_batch  
+                
+                s_stack_batch[:,update_step,:] = s_batch
+        
+        else:
+            # Repeat the update process N_step times
+            for update_step in range(N_step):
+                s_batch = modulus*torch.exp(1j *phi_batch)    
+                
+                eta_net_batch = torch.zeros(batch_size, Ls).to(self.device)
+                # print(update_step)
+                for m, (G_batch, H_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
+                                                           torch.unbind(H_M_batch, dim=3))):
+                    w_batch = w_M_batch[:,:,m]
+                    y_batch = y_batch_M[m]
+                    x_batch = torch.cat((s_batch.real, s_batch.imag, w_batch.real, w_batch.imag, y_batch), dim=1)
+                    
+                    rho_batch = self.est_rho_modules(x_batch)
+                    
+                    eta_batch = eta_sred(G_batch, H_batch, s_batch)
+                    
+                    eta_net_batch += rho_batch*eta_batch
+                    
+                    # save
+                    rho_M_stack_batch[:,update_step,m] = rho_batch.squeeze()
+                
+                
+                # Update phi
+                phi_batch = phi_batch - rho_batch*eta_net_batch  
+                
+                s_stack_batch[:,update_step,:] = s_batch
+        
+        s_stack_batch[:,N_step,:] = modulus*torch.exp(1j *phi_batch)  # Saving the final s after all updates
+            
+        model_outputs = {
+            's_stack_batch': s_stack_batch,
+            'rho_M_stack_batch': rho_M_stack_batch
+        }
+        
+        return model_outputs
 
 # class SRED_vary_rho(nn.Module):
 #     def __init__(self, constants):
