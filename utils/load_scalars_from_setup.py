@@ -8,6 +8,7 @@ Created on Mon Feb 19 14:10:08 2024
 """
 
 from scipy.io import loadmat
+import torch
 
 def load_scalars_from_setup(file_path):
     # Load the .mat file
@@ -33,7 +34,19 @@ def load_scalars_from_setup(file_path):
 def load_param_from_setup(file_path):
     # Load the .mat file
     data = loadmat(file_path, squeeze_me=True)
-    struct_c = data['struct_c']
+    struct_c = Struct_c(data)
+    struct_m = Struct_m(data)
+    struct_k = Struct_k(data)
+    
+    # matrices
+    aqaqh = torch.tensor(data['aqaqh'], dtype=torch.complex64)
+    aqhaq = torch.tensor(data['aqhaq'], dtype=torch.complex64)
+    bqbqh = torch.tensor(data['bqbqh'], dtype=torch.complex64)
+    bqhbq = torch.tensor(data['bqhbq'], dtype=torch.complex64)
+    
+    Upsilon = torch.tensor(data['Upsilon'], dtype=torch.complex64)
+    
+    return struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon
     
 class Struct_c:
     def __init__(self, data):
@@ -44,6 +57,12 @@ class Struct_c:
         self.M = struct_c['M'].item()    # Number of targets
         self.K = struct_c['K'].item()    # Number of interference
         self.Lj = struct_c['Lj'].item()  # l_M - l_1 + N
+        
+class Struct_m:
+    def __init__(self, data):
+        struct_m = data['struct_m']
+        self.lm = struct_m['lm']
+        self.delta_m = struct_m['delta_m']
 
 class Struct_k:
     def __init__(self, data):
