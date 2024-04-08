@@ -16,8 +16,9 @@ from utils.custom_loss_batch import reciprocal_sinr
 #     return numerator / denominator
 def reciprocal_sinr_M(G_M_batch, H_M_batch, s_batch):
     batch_size = s_batch.size(0)
+    device = s_batch.device
     
-    f_sinr_batch = torch.zeros(batch_size)
+    f_sinr_batch = torch.zeros(batch_size).to(device)
     for m, (G_batch, H_batch) in enumerate(zip(torch.unbind(G_M_batch, dim=3),
                                                torch.unbind(H_M_batch, dim=3))):
         f_sinr_batch += reciprocal_sinr(G_batch, H_batch, s_batch)
