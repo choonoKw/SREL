@@ -76,7 +76,7 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon):
         # Sum_{p=1,\neq m}^M
         pList = [p for p in range(M) if p != m]
         for p in pList:
-            Phi_temp = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64)
+            Phi_temp = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64).to(device)
             rp = lm[p] - lm[0]
             for n1 in range(1, Lj - rp + 1):
                 for n2 in range(1, Lj - rp + 1):
@@ -90,7 +90,7 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon):
 
         # Sum_{k=1}^K
         for k in range(K):
-            Phi_temp = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64)
+            Phi_temp = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64).to(device)
             rk = abs(r[k])
             for n1 in range(1, Lj - rk + 1):
                 for n2 in range(1, Lj - rk + 1):
@@ -103,7 +103,9 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon):
             Phi_m_tilde += Phi_temp
 
         # Upsilon
-        upsilon_term = (w_mList[:, m].unsqueeze(0).conj() @ Upsilon @ w_mList[:, m].unsqueeze(-1)) * torch.eye(Lj * Nt, dtype=torch.complex64)
+        upsilon_term = (
+            w_mList[:, m].unsqueeze(0).conj() @ Upsilon @ w_mList[:, m].unsqueeze(-1)
+            ) * torch.eye(Lj * Nt, dtype=torch.complex64).to(device)
         Phi_m_tilde += upsilon_term
 
         Phi_m[:, :, m] = Phi_m_tilde[:Nt * N, :Nt * N]
