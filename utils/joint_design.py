@@ -89,7 +89,7 @@ def test(constants, model_test, eps_f):
                 
                 # record values
                 s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
-                f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
+                f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s).item()
                 f_sinr_stack_list[idx_data,idx_iter+1] = f_sinr
                 f_sinr_db = 10*np.log10(f_sinr)
                 
