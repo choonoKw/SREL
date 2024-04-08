@@ -33,18 +33,18 @@ def load_scalars_from_setup(file_path):
 
 def load_param_from_setup(file_path, device):
     # Load the .mat file
-    data = loadmat(file_path, squeeze_me=True).to(device)
+    data = loadmat(file_path, squeeze_me=True)
     struct_c = Struct_c(data)
     struct_m = Struct_m(data)
     struct_k = Struct_k(data)
     
     # matrices
-    aqaqh = torch.tensor(data['aqaqh'], dtype=torch.complex64)
-    aqhaq = torch.tensor(data['aqhaq'], dtype=torch.complex64)
-    bqbqh = torch.tensor(data['bqbqh'], dtype=torch.complex64)
-    bqhbq = torch.tensor(data['bqhbq'], dtype=torch.complex64)
+    aqaqh = torch.tensor(data['aqaqh'], dtype=torch.complex64).to(device)
+    aqhaq = torch.tensor(data['aqhaq'], dtype=torch.complex64).to(device)
+    bqbqh = torch.tensor(data['bqbqh'], dtype=torch.complex64).to(device)
+    bqhbq = torch.tensor(data['bqhbq'], dtype=torch.complex64).to(device)
     
-    Upsilon = torch.tensor(data['Upsilon'], dtype=torch.complex64)
+    Upsilon = torch.tensor(data['Upsilon'], dtype=torch.complex64).to(device)
     
     return struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon
     
