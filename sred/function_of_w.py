@@ -9,6 +9,8 @@ import torch
 # import numpy as np
 
 def make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh):
+    device = W_m_tilde.device
+    
     Nt = struct_c.Nt
     N = struct_c.N
     M = struct_c.M
@@ -21,10 +23,10 @@ def make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh):
     
     # Initialize Theta_m
     Theta_m = torch.zeros(Nt * N, Nt * N, M, 
-                          dtype=torch.complex64, device=W_m_tilde.device)
+                          dtype=torch.complex64).to(device)
     
     for m in range(M):
-        Theta_m_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_m_tilde.dtype, device=W_m_tilde.device)
+        Theta_m_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_m_tilde.dtype).to(device)
         rm = lm[m] - lm[0]
         for n1 in range(1, Lj - rm + 1):
             for n2 in range(1, Lj - rm + 1):
@@ -41,6 +43,8 @@ def make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh):
     return Theta_m
 
 def make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon):
+    device = w_mList.device
+    
     Nt = struct_c.Nt;
     N = struct_c.N;
     Nr = struct_c.Nr;
@@ -60,14 +64,14 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon):
     Lj = struct_c.Lj;
     
     # Rearrange
-    W_m_tilde = torch.zeros((Nr, Lj, M), dtype=torch.complex64)
+    W_m_tilde = torch.zeros((Nr, Lj, M), dtype=torch.complex64).to(device)
     for m in range(M):
         W_m_tilde[:, :, m] = w_mList[:, m].view(Nr, Lj)
 
     # Make Phi_m
-    Phi_m = torch.zeros((Nt * N, Nt * N, M), dtype=torch.complex64)
+    Phi_m = torch.zeros((Nt * N, Nt * N, M), dtype=torch.complex64).to(device)
     for m in range(M):
-        Phi_m_tilde = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64)
+        Phi_m_tilde = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64).to(device)
 
         # Sum_{p=1,\neq m}^M
         pList = [p for p in range(M) if p != m]
