@@ -75,7 +75,7 @@ def derive_s(constants, phi, struct_c, struct_m):
     M = struct_c.M
     Lj = struct_c.Lj
     
-    lm = struct_m.lm.to(device)
+    lm = struct_m.lm
     
     # Ensure s is unsqueezed to mimic column vector shape for concatenation
     s_extended = torch.cat(
