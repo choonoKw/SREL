@@ -112,9 +112,6 @@ def make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon):
             Psi_M[:, :, m] += Psi_temp
     
         # Hermitianize Psi_M[:,:,m], then add Sigma and Upsilon
-        print(f'device of Psi_M is {Psi_M.device}')
-        print(f'device of Sigma is {Sigma.device}')
-        print(f'device of Upsilon is {Upsilon.device}')
         Psi_M[:, :, m] = (Psi_M[:, :, m] + Psi_M[:, :, m].transpose(0, 1).conj()) / 2 + Sigma + Upsilon
     
     return Psi_M
