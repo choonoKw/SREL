@@ -57,8 +57,8 @@ def derive_w(struct_c,Psi_m,Gamma_m,device):
     M = struct_c.M;
     
     # Initialize tensors in PyTorch
-    w_mList = torch.zeros((Lj*Nr, M), dtype=torch.complex64).to(device)
-    W_m_tilde = torch.zeros((Nr, Lj, M), dtype=torch.complex64).to(device)
+    w_M = torch.zeros((Lj*Nr, M), dtype=torch.complex64).to(device)
+    W_M_tilde = torch.zeros((Nr, Lj, M), dtype=torch.complex64).to(device)
 
     for m in range(M):
         # Compute the eigenvalues and eigenvectors
@@ -71,14 +71,14 @@ def derive_w(struct_c,Psi_m,Gamma_m,device):
         # Eigenvalues are returned as a vector, so take the real part if necessary
         i = torch.argmax(torch.abs(D))
         
-        # Normalize the corresponding eigenvector and store it in w_mList
+        # Normalize the corresponding eigenvector and store it in w_M
         norm_factor = torch.norm(V[:, i], p=2)
-        w_mList[:, m] = V[:, i] / norm_factor
+        w_M[:, m] = V[:, i] / norm_factor
         
-        # Reshape and store in W_m_tilde
-        W_m_tilde[:, :, m] = w_mList[:, m].reshape(Lj,Nr).T
+        # Reshape and store in W_M_tilde
+        W_M_tilde[:, :, m] = w_M[:, m].reshape(Lj,Nr).T
         
-    return w_mList, W_m_tilde
+    return w_M, W_M_tilde
 
 def derive_s(constants, phi, struct_c, struct_m):
     device = phi.device

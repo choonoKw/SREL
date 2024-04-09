@@ -17,6 +17,9 @@ from sred.functions import sum_of_sinr_reciprocal, sinr_values, derive_s, derive
 from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma
 from sred.function_of_w import make_Phi_M, make_Theta_M
 
+import time
+from utils.format_time import format_time
+
 
 def test(constants, model_test, eps_f):
     device = model_test.device
@@ -70,21 +73,24 @@ def test(constants, model_test, eps_f):
                 torch.unbind(phi_list, dim=-1),torch.unbind(w_M_list, dim=-1)
                 )): 
             
-            s, _ = derive_s(constants, phi, struct_c, struct_m)
+            s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
             f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
             f_sinr_stack_list[idx_data,0] = f_sinr
             
             
             ##### test
-            # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
+            Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
             
-            # Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
+            Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
             
-            # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+            Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
             
-            # w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+            w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+            
+            G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+            H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
             ####
-            
+            start_time_epoch = time.time()
             for idx_iter in range(N_iter):
                 # s = modulus*torch.exp(1j *phi) 
                 
@@ -133,6 +139,11 @@ def test(constants, model_test, eps_f):
                 
                 print(f'idx_iter={idx_iter}, '
                       f'f_sinr = {f_sinr_db:.2f}')
+                
+                time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
+                time_left = time_spent_epoch * (N_iter - idx_iter - 1)  # Estimate the time left
+                formatted_time_left = format_time(time_left)
+                print(f"{formatted_time_left} left")
                 
             
                 
