@@ -16,8 +16,8 @@ def make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh):
     M = struct_c.M
     
     # target information
-    lm = struct_m.lm.to(device)
-    delta_m = struct_m.delta_m.to(device)
+    lm = struct_m.lm
+    delta_m = struct_m.delta_m
     
     Lj = struct_c.Lj
     
@@ -85,9 +85,9 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon):
                         for q2 in range(Nt):
                             index1 = q1 + Nt * (n1 - 1)
                             index2 = q2 + Nt * (n2 - 1)
-                            print('device of Z is {Z.device}')
-                            print('device of aqaqh is {aqaqh.device}')
-                            print('device of Phi_temp is {Phi_temp.device}')
+                            # print('device of Z is {Z.device}')
+                            # print('device of aqaqh is {aqaqh.device}')
+                            # print('device of Phi_temp is {Phi_temp.device}')
                             Phi_temp[index1, index2] = (delta_m[p]**2) * torch.trace(Z @ aqaqh[..., q1, q2, p])
             Phi_m_tilde += Phi_temp
 
