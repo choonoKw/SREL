@@ -69,10 +69,21 @@ def test(constants, model_test, eps_f):
                 torch.unbind(phi_list, dim=-1),torch.unbind(w_M_list, dim=-1)
                 )): 
             
-            s, _ = derive_s(constants, phi, struct_c, struct_m)
+            s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
             f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
             f_sinr_stack_list[idx_data,0] = f_sinr
-            # f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
+            
+            
+            ##### test
+            # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
+            
+            # Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
+            
+            # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+            
+            # w_mList, W_m_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+            ####
+            
             for idx_iter in range(N_iter):
                 # s = modulus*torch.exp(1j *phi) 
                 

@@ -63,7 +63,7 @@ def derive_w(struct_c,Psi_m,Gamma_m,device):
         w_mList[:, m] = V[:, i] / norm_factor
         
         # Reshape and store in W_m_tilde
-        W_m_tilde[:, :, m] = w_mList[:, m].view(Nr, Lj)
+        W_m_tilde[:, :, m] = w_mList[:, m].reshape(Lj,Nr).T
         
     return w_mList, W_m_tilde
 
@@ -78,12 +78,13 @@ def derive_s(constants, phi, struct_c, struct_m):
     lm = struct_m.lm
     
     # Ensure s is unsqueezed to mimic column vector shape for concatenation
-    s_extended = torch.cat(
-        (s.unsqueeze(1), torch.zeros(
-            Nt * (lm[M-1] - lm[0]), 1, dtype=torch.complex64).to(device)
-        ), 0)
+    # s_extended = torch.cat(
+    #     (s.unsqueeze(1), torch.zeros(
+    #         Nt * (lm[M-1] - lm[0]), 1, dtype=torch.complex64).to(device)
+    #     ), 0)
+    s_tilde = torch.cat([s, torch.zeros(Nt * (lm[M-1] - lm[0]))], dim=0)
     
     # Reshape s_extended to Nt x Lj
-    S_tilde = s_extended.view(Nt, Lj)
+    S_tilde = s_tilde.reshape(Lj,Nt).T
     
     return s, S_tilde
