@@ -82,7 +82,7 @@ def main(save_weights, save_logs, save_mat,
     optimizer = optim.Adam(model_intra_phase1.parameters(), lr=learning_rate)
     
     # loss setting
-    # lambda_sinr = 1e-2
+    # lambda_sinr = 1e-1
     lambda_var_rho = 0
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
@@ -320,19 +320,19 @@ if __name__ == "__main__":
     
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e0)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e0)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-1)
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-2)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-2)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-3)
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-3)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-4)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-4)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-5)
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-5)
