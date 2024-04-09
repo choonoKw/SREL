@@ -14,7 +14,7 @@ from utils.training_dataset import TrainingDataSet
 
 from sred.functions import sum_of_sinr_reciprocal, sinr_values, derive_s, derive_w
 
-from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma
+from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma, make_Sigma_opt
 from sred.function_of_w import make_Phi_M, make_Theta_M
 
 import time
@@ -133,7 +133,7 @@ def test(constants, model_test, eps_f):
                         -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
                     break
                 
-                Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
+                Sigma = make_Sigma_opt(struct_c,struct_k,S_tilde,bqhbq)
                 
                 Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
                 
