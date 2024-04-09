@@ -77,18 +77,24 @@ def test(constants, model_test, eps_f):
             f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
             f_sinr_stack_list[idx_data,0] = f_sinr
             
+            sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+            
+            for m in range(M):
+                print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
+                
+            print(' ')
             
             ##### test
-            Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
+            # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
             
-            Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
+            # Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
             
-            Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+            # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
             
-            w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+            # w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
             
-            G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
-            H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
+            # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+            # H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
             ####
             start_time_epoch = time.time()
             for idx_iter in range(N_iter):
@@ -113,6 +119,9 @@ def test(constants, model_test, eps_f):
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 
+                
+                print(f'idx_iter={idx_iter}, '
+                      f'f_sinr = {f_sinr_db:.2f}')
                 for m in range(M):
                     print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
                     
@@ -136,12 +145,14 @@ def test(constants, model_test, eps_f):
                 H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+                
+                print('w_M is updated')
                 for m in range(M):
                     print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
                 print(' ')
                 
-                print(f'idx_iter={idx_iter}, '
-                      f'f_sinr = {f_sinr_db:.2f}')
+                # print(f'idx_iter={idx_iter}, '
+                #       f'f_sinr = {f_sinr_db:.2f}')
                 
                 time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
                 time_left = time_spent_epoch * (N_iter - idx_iter - 1)  # Estimate the time left
