@@ -13,7 +13,7 @@ import torch
 class TrainingDataSet(Dataset):
     def __init__(self, mat_file, stage=1):
         data = loadmat(mat_file)
-        self.phi_list = torch.tensor(data['phi_list'], dtype=torch.float64)
+        self.phi_list = torch.tensor(data['phi_list'], dtype=torch.float32)
         self.G_M_list = torch.tensor(data['G_M_list'], dtype=torch.complex64)
         self.H_M_list = torch.tensor(data['H_M_list'], dtype=torch.complex64)
         self.w_M_list = torch.tensor(data['w_M_list'], dtype=torch.complex64)
