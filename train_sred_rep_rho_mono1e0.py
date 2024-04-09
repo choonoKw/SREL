@@ -71,11 +71,11 @@ def main(save_weights, save_logs, save_mat,
     ## Control Panel
     ###############################################################
     # Initialize model
-    N_step = 50
+    N_step = 10
     constants['N_step'] = N_step
     model_intra_phase1 = SRED_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 10
+    num_epochs = 50
     # Initialize the optimizer
     # learning_rate=1e-5
     # print(f'learning_rate={learning_rate:.0e}')
