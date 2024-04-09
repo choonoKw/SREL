@@ -38,14 +38,14 @@ def eta_sred(G, H, s):
     
     return eta
 
-def derive_w(struct_c,Psi_m,Gamma_m):
+def derive_w(struct_c,Psi_m,Gamma_m,device):
     Lj = struct_c.Lj;
     Nr = struct_c.Nr;
     M = struct_c.M;
     
     # Initialize tensors in PyTorch
-    w_mList = torch.zeros((Lj*Nr, M), dtype=torch.complex64)
-    W_m_tilde = torch.zeros((Nr, Lj, M), dtype=torch.complex64)
+    w_mList = torch.zeros((Lj*Nr, M), dtype=torch.complex64).to(device)
+    W_m_tilde = torch.zeros((Nr, Lj, M), dtype=torch.complex64).to(device)
 
     for m in range(M):
         # Compute the eigenvalues and eigenvectors
