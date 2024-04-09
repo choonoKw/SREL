@@ -81,7 +81,7 @@ def test(constants, model_test, eps_f):
             
             # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
             
-            # w_mList, W_m_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+            # w_mList, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
             ####
             
             for idx_iter in range(N_iter):
@@ -115,10 +115,10 @@ def test(constants, model_test, eps_f):
                 
                 Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
                 
-                w_mList, W_m_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+                w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
                 
                 G_M = make_Phi_M(struct_c,struct_m,struct_k,w_mList,aqaqh,bqbqh,Upsilon)
-                H_M = make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh)
+                H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
                 
                 print(f'idx_iter={idx_iter}, '
                       f'f_sinr = {f_sinr_db:.2f}')
