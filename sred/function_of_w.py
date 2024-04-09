@@ -26,19 +26,24 @@ def make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh):
                           dtype=torch.complex64).to(device)
     
     for m in range(M):
-        Theta_m_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_M_tilde.dtype).to(device)
+        Theta_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_M_tilde.dtype).to(device)
         rm = lm[m] - lm[0]
         for n1 in range(1, Lj - rm + 1):
             for n2 in range(1, Lj - rm + 1):
-                Z = W_M_tilde[:, rm + n1 - 1, m].unsqueeze(-1) * W_M_tilde[:, rm + n2 - 1, m].unsqueeze(-1).conj().transpose(0, 1)
+                Z = torch.outer(
+                    W_M_tilde[:, rm + n1 - 1, m], W_M_tilde[:, rm + n2 - 1, m].conj()
+                    )
+                # Z = W_M_tilde[:, rm + n1 - 1, m].unsqueeze(-1) * W_M_tilde[:, rm + n2 - 1, m].unsqueeze(-1).conj().T
                 for q1 in range(Nt):
                     for q2 in range(Nt):
                         index1 = q1 + Nt * (n1 - 1)
                         index2 = q2 + Nt * (n2 - 1)
-                        Theta_m_tilde[index1, index2] = (delta_m[m]**2) * torch.trace(Z @ aqaqh[..., q1, q2, m]).to(device)
+                        Theta_tilde[index1, index2] = (delta_m[m]**2) * torch.trace(Z @ aqaqh[..., q1, q2, m]).to(device)
         
         # Hermitianized
-        Theta_m[..., m] = (Theta_m_tilde[:Nt * N, :Nt * N] + Theta_m_tilde[:Nt * N, :Nt * N].transpose(0, 1)) / 2
+        Theta_m[..., m] = (
+            Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].T
+            ) / 2
     
     return Theta_m
 
