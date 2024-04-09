@@ -27,6 +27,19 @@ def sum_of_sinr_reciprocal(G_M, H_M, s):
         
     return f_sinr
 
+def sinr_values(G_M, H_M, s):
+    M = G_M.size(-1)
+    sinr_M = torch.zeros(M).to(s.device)
+    for m, (G, H) in enumerate(zip(
+            torch.unbind(G_M, dim=-1),torch.unbind(H_M, dim=-1)
+            )): 
+        numerator = torch.abs(torch.vdot(s, torch.matmul(H, s)))
+        denominator = torch.abs(torch.vdot(s, torch.matmul(G, s)))
+        
+        sinr_M[m] = numerator / denominator
+        
+    return sinr_M
+
 def eta_sred(G, H, s):
     Gs = torch.matmul(G, s)  # G*s
     Hs = torch.matmul(H, s)  # H*s

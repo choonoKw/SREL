@@ -12,7 +12,7 @@ from utils.load_scalars_from_setup import load_param_from_setup
 from utils.training_dataset import TrainingDataSet
 # from torch.utils.data import DataLoader
 
-from sred.functions import sum_of_sinr_reciprocal, derive_s, derive_w
+from sred.functions import sum_of_sinr_reciprocal, sinr_values, derive_s, derive_w
 
 from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma
 from sred.function_of_w import make_Phi_M, make_Theta_M
@@ -26,13 +26,14 @@ def test(constants, model_test, eps_f):
     
     dataset = TrainingDataSet('data/data_trd_1e+02_val.mat')
     N_data = len(dataset)
+    M = constants['M']
     # modulus = constants['modulus']
     
     # val_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     
     y_M = dataset.y_M
     
-    N_iter = 20
+    N_iter = 3
     
     f_sinr_stack_list = np.zeros((N_data, N_iter))    
     
@@ -104,6 +105,12 @@ def test(constants, model_test, eps_f):
                 f_sinr_stack_list[idx_data,idx_iter+1] = f_sinr
                 f_sinr_db = 10*np.log10(f_sinr)
                 
+                sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+                
+                for m in range(M):
+                    print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
+                
+                
                 if abs(
                         f_sinr_stack_list[idx_data,idx_iter+1]
                         -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
@@ -119,6 +126,10 @@ def test(constants, model_test, eps_f):
                 
                 G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,aqaqh,bqbqh,Upsilon)
                 H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
+                
+                sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+                for m in range(M):
+                    print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
                 
                 print(f'idx_iter={idx_iter}, '
                       f'f_sinr = {f_sinr_db:.2f}')
