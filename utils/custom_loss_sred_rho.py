@@ -35,6 +35,58 @@ def custom_loss_sred_mono(constants, G_M_batch, H_M_batch, hyperparameters, mode
     
     f_sinr_sum = 0.0
     
+    s_batch =  s_stack_batch[:,0,:]
+    f_sinr_t1_batch = reciprocal_sinr_M(G_M_batch, H_M_batch, s_batch)
+    
+    N_vl_sum = 0 # number of violation of monotonicity
+    for update_step in range(N_step):
+        s_batch =  s_stack_batch[:,update_step+1,:]
+            
+        f_sinr_t2_batch = reciprocal_sinr_M(G_M_batch, H_M_batch, s_batch)
+        
+        f_sinr_sum += torch.sum(
+            torch.exp(
+                hyperparameters['lambda_mono']*(f_sinr_t2_batch-f_sinr_t1_batch)
+            )
+        )
+        
+        N_vl_sum += torch.sum(
+            (f_sinr_t2_batch - f_sinr_t1_batch > 0).int()
+            )
+        
+    # s_batch =  s_stack_batch[:,-1,:]
+    
+    f_sinr_opt = torch.sum(reciprocal_sinr_M(G_M_batch, H_M_batch, s_batch))
+    
+    
+    # sinr_opt_avg = torch.sum(1/f_sinr_opt_batch)/batch_size
+    
+    var_rho_avg = torch.sum(
+        torch.var(rho_M_stack_batch, dim=0, unbiased=False)
+        )/M
+    
+    loss = (
+        f_sinr_opt
+        + hyperparameters['lambda_sinr']*f_sinr_sum/(N_step-1)
+        + hyperparameters['lambda_var_rho']*var_rho_avg
+        )
+    
+    loss_avg = loss / batch_size 
+    
+    N_vl_avg = N_vl_sum / batch_size
+    
+    return loss_avg, N_vl_avg
+
+
+def custom_loss_sred(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
+    N_step = constants['N_step']
+    s_stack_batch = model_outputs['s_stack_batch']
+    rho_M_stack_batch = model_outputs['rho_M_stack_batch']
+    batch_size = s_stack_batch.size(0)
+    M = rho_M_stack_batch.size(-1)
+    
+    f_sinr_sum = 0.0
+    
     
     for update_step in range(N_step-1):
         s_batch =  s_stack_batch[:,update_step+1,:]
@@ -64,7 +116,7 @@ def custom_loss_sred_mono(constants, G_M_batch, H_M_batch, hyperparameters, mode
     
     return loss_avg
 
-def custom_loss_function(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
+def custom_loss_function_element(constants, G_M_batch, H_M_batch, hyperparameters, model_outputs):
     N_step = constants['N_step']
     s_stack_batch = model_outputs['s_stack_batch']
     # rho_M_stack_batch = model_outputs['rho_M_stack_batch']

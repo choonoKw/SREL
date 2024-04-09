@@ -52,7 +52,7 @@ def main(save_weights, save_logs, save_mat,
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -75,7 +75,7 @@ def main(save_weights, save_logs, save_mat,
     constants['N_step'] = N_step
     model_intra_phase1 = SRED_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     # learning_rate=1e-5
     # print(f'learning_rate={learning_rate:.0e}')
@@ -126,6 +126,7 @@ def main(save_weights, save_logs, save_mat,
         total_val_loss = 0.0
         
         sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
+        N_vl_sum = 0.0
         
         start_time_epoch = time.time()  # Start timing the inner loop
         for idx_case in range(num_case):
@@ -165,7 +166,7 @@ def main(save_weights, save_logs, save_mat,
                     phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
 
                 # s_stack_batch = model_outputs['s_stack_batch']
-                loss = custom_loss_sred_mono(
+                loss, _ = custom_loss_sred_mono(
                     constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
 
                 loss.backward()
@@ -198,11 +199,11 @@ def main(save_weights, save_logs, save_mat,
                     model_outputs = model_intra_phase1(
                         phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
 
-                    val_loss = custom_loss_sred_mono(
+                    val_loss, N_vl = custom_loss_sred_mono(
                         constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
                     
                     total_val_loss += val_loss.item()
-                    
+                    N_vl_sum += N_vl
                         
                     s_stack_batch = model_outputs['s_stack_batch']
                     s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
@@ -222,6 +223,8 @@ def main(save_weights, save_logs, save_mat,
         average_val_loss_db = 10*np.log10(average_val_loss)
         validation_losses.append(average_val_loss_db)
         
+        N_vl_avg = N_vl_sum / num_case
+        
         if save_logs:
             writer.add_scalar('Loss/Training [dB]', average_train_loss_db, epoch)
             writer.add_scalar('Loss/Testing [dB]', average_val_loss_db, epoch)
@@ -231,10 +234,11 @@ def main(save_weights, save_logs, save_mat,
         worst_sinr_avg_db = 10*np.log10(sum_of_worst_sinr_avg/ len(test_loader) / num_case)  # Compute average loss for the epoch
         epoch_counter = np.round(num_epochs/10)
         if epoch == 0 or (epoch+1) % epoch_counter == 0:
-            print(f'Epoch [{epoch+1}/{num_epochs}], '
+            print(f'Epoch [{epoch+1}/{num_epochs}]\n '
                  f'Train Loss = {average_train_loss_db:.2f} dB, '
                  f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
-                 f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+                 f'average_worst_sinr = {worst_sinr_avg_db:.2f} dB, '
+                 f'# of violation = {N_vl_avg:.2f}')
             
             time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
             time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
@@ -330,5 +334,5 @@ if __name__ == "__main__":
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
         batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-4)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-5)

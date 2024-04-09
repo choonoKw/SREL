@@ -138,6 +138,7 @@ def test(constants, model_test, eps_f):
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 for m in range(M):
                     print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
+                print(' ')
                 
                 print(f'idx_iter={idx_iter}, '
                       f'f_sinr = {f_sinr_db:.2f}')
