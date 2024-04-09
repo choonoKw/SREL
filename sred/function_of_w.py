@@ -47,7 +47,7 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
     
     Nt = struct_c.Nt;
     N = struct_c.N;
-    Nr = struct_c.Nr;
+    # Nr = struct_c.Nr;
     
     # target information
     M = struct_c.M;
