@@ -35,7 +35,7 @@ def make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh):
                     for q2 in range(Nt):
                         index1 = q1 + Nt * (n1 - 1)
                         index2 = q2 + Nt * (n2 - 1)
-                        Theta_m_tilde[index1, index2] = (delta_m[m]**2) * torch.trace(Z @ aqaqh[..., q1, q2, m])
+                        Theta_m_tilde[index1, index2] = (delta_m[m]**2) * torch.trace(Z @ aqaqh[..., q1, q2, m]).to(device)
         
         # Hermitianized
         Theta_m[..., m] = (Theta_m_tilde[:Nt * N, :Nt * N] + Theta_m_tilde[:Nt * N, :Nt * N].transpose(0, 1)) / 2
