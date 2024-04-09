@@ -16,8 +16,8 @@ def make_Theta_M(struct_c,struct_m,W_m_tilde,aqaqh):
     M = struct_c.M
     
     # target information
-    lm = struct_m.lm
-    delta_m = struct_m.delta_m
+    lm = struct_m.lm.to(device)
+    delta_m = struct_m.delta_m.to(device)
     
     Lj = struct_c.Lj
     
