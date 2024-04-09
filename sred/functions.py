@@ -82,7 +82,7 @@ def derive_s(constants, phi, struct_c, struct_m):
     #     (s.unsqueeze(1), torch.zeros(
     #         Nt * (lm[M-1] - lm[0]), 1, dtype=torch.complex64).to(device)
     #     ), 0)
-    s_tilde = torch.cat([s, torch.zeros(Nt * (lm[M-1] - lm[0]))], dim=0)
+    s_tilde = torch.cat([s, torch.zeros(Nt * (lm[M-1] - lm[0])).to(device)], dim=0)
     
     # Reshape s_extended to Nt x Lj
     S_tilde = s_tilde.reshape(Lj,Nt).T
