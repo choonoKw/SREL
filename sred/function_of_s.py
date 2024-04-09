@@ -74,26 +74,34 @@ def make_Sigma_opt(struct_c,struct_k,S_tilde,bqhbq):
         if r[k] < 0:
             for n1 in range(1, Lj - rk_abs + 1):
                 for n2 in range(1, Lj - rk_abs + 1):
-                    Z = S_tilde[:, rk_abs + n1 - 1].unsqueeze(-1) * S_tilde[:, rk_abs + n2 - 1].unsqueeze(0).conj()
+                    Z = ( S_tilde[:, rk_abs + n1 - 1].unsqueeze(-1) 
+                         * S_tilde[:, rk_abs + n2 - 1].unsqueeze(0).conj()
+                         )
                     
                     for q1 in range_Nr:
                         for q2 in range_Nr:
                             index1 = (q1 - 1) + Nr * (n1 - 1)
                             index2 = (q2 - 1) + Nr * (n2 - 1)
                             # Operation inside loop is minimized to essential tensor operations
-                            Sigma_temp[index1, index2] = sigma_k_squared[k] * torch.trace(
-                                Z @ bqhbq[:, :, q1 - 1, q2 - 1, k])
+                            Sigma_temp[index1, index2] = ( 
+                                sigma_k_squared[k] * torch.trace(
+                                    Z @ bqhbq[:, :, q1 - 1, q2 - 1, k])
+                            )
         else:  # r[k] > 0
             for n1 in range(rk_abs + 1, Lj + 1):
                 for n2 in range(rk_abs + 1, Lj + 1):
-                    Z = S_tilde[:, n1 - rk_abs - 1].unsqueeze(-1) * S_tilde[:, n2 - rk_abs - 1].unsqueeze(0).conj()
+                    Z = ( S_tilde[:, n1 - rk_abs - 1].unsqueeze(-1) 
+                         * S_tilde[:, n2 - rk_abs - 1].unsqueeze(0).conj()
+                    )
                     
                     for q1 in range_Nr:
                         for q2 in range_Nr:
                             index1 = (q1 - 1) + Nr * (n1 - 1)
                             index2 = (q2 - 1) + Nr * (n2 - 1)
-                            Sigma_temp[index1, index2] = sigma_k_squared[k] * torch.trace(
-                                Z @ bqhbq[:, :, q1 - 1, q2 - 1, k])
+                            Sigma_temp[index1, index2] = ( 
+                                sigma_k_squared[k] * torch.trace(
+                                    Z @ bqhbq[:, :, q1 - 1, q2 - 1, k])
+                            )
 
         Sigma += Sigma_temp
 
@@ -107,6 +115,7 @@ def make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq):
     M = struct_c.M;
     lm = struct_m.lm;
     delta_m = struct_m.delta_m;
+    delta_m_squared = delta_m ** 2
     
     Lj = struct_c.Lj;
     
@@ -119,15 +128,21 @@ def make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq):
         rm = lm[m] - lm[0]
         for n1 in range(rm + 1, Lj + 1):
             for n2 in range(rm + 1, Lj + 1):
-                Z = S_tilde[:, n1 - rm - 1].unsqueeze(-1) * S_tilde[:, n2 - rm - 1].unsqueeze(0).conj()
+                Z = ( S_tilde[:, n1 - rm - 1].unsqueeze(-1) 
+                     * S_tilde[:, n2 - rm - 1].unsqueeze(0).conj()
+                     )
                 for q1 in range_Nr:
                     for q2 in range_Nr:
                         index1 = (q1 - 1) + Nr * (n1 - 1)
                         index2 = (q2 - 1) + Nr * (n2 - 1)
-                        Gamma_temp[index1, index2] = (delta_m[m]**2) * torch.trace(Z @ aqhaq[:, :, q1 - 1, q2 - 1, m])
+                        Gamma_temp[index1, index2] = ( delta_m_squared[m] 
+                                                      * torch.trace(
+                                                          Z @ aqhaq[:, :, q1 - 1, q2 - 1, m]
+                                                          ) 
+                                                      )
     
         # Hermitianize Gamma_temp
-        Gamma_M[:, :, m] = (Gamma_temp + Gamma_temp.transpose(0, 1).conj()) / 2
+        Gamma_M[:, :, m] = (Gamma_temp + Gamma_temp.conj().T) / 2
     
     return Gamma_M
 
@@ -139,6 +154,7 @@ def make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon):
     M = struct_c.M;
     lm = struct_m.lm;
     delta_m = struct_m.delta_m;
+    delta_m_squared = delta_m ** 2
     
     Lj = struct_c.Lj;
 
@@ -154,16 +170,22 @@ def make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon):
             rp = lm[p] - lm[0]
             for n1 in range(rp + 1, Lj + 1):
                 for n2 in range(rp + 1, Lj + 1):
-                    Z = S_tilde[:, n1 - rp - 1].unsqueeze(-1) * S_tilde[:, n2 - rp - 1].unsqueeze(0).conj()
+                    Z = ( S_tilde[:, n1 - rp - 1].unsqueeze(-1) 
+                         * S_tilde[:, n2 - rp - 1].unsqueeze(0).conj() )
                     for q1 in range_Nr:
                         for q2 in range_Nr:
                             index1 = (q1-1) + Nr*(n1-1)
                             index2 = (q2-1) + Nr*(n2-1)
-                            Psi_temp[index1, index2] = (delta_m[p]**2) * torch.trace(Z @ aqhaq[:, :, q1 - 1, q2 - 1, p])
+                            Psi_temp[index1, index2] = ( delta_m_squared[p] 
+                                                        * torch.trace(
+                                                            Z @ aqhaq[:, :, q1 - 1, q2 - 1, p]
+                                                            ) ) 
             Psi_M[:, :, m] += Psi_temp
     
         # Hermitianize Psi_M[:,:,m], then add Sigma and Upsilon
-        Psi_M[:, :, m] = (Psi_M[:, :, m] + Psi_M[:, :, m].transpose(0, 1).conj()) / 2 + Sigma + Upsilon
+        Psi_M[:, :, m] = (
+            Psi_M[:, :, m] + Psi_M[:, :, m].conj().T
+            ) / 2 + Sigma + Upsilon
     
     return Psi_M
 
