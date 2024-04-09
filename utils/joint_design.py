@@ -69,7 +69,7 @@ def test(constants, model_test, eps_f):
                 torch.unbind(phi_list, dim=-1),torch.unbind(w_M_list, dim=-1)
                 )): 
             
-            s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
+            s, _ = derive_s(constants, phi, struct_c, struct_m)
             f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
             f_sinr_stack_list[idx_data,0] = f_sinr
             
