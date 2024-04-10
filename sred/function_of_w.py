@@ -49,6 +49,60 @@ def make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh):
             ) / 2
     
     return Theta_m
+    
+def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
+    device = W_M_tilde.device
+    
+    Nt = struct_c.Nt
+    N = struct_c.N
+    M = struct_c.M
+    
+    # target information
+    lm = struct_m.lm
+    delta_m = struct_m.delta_m
+    delta_m_squared = delta_m ** 2
+    
+    
+    Lj = struct_c.Lj
+    
+    # Initialize Theta_m
+    Nt_range = torch.arange(Nt, dtype=torch.long, device=device)
+    Theta_m = torch.zeros(Nt * N, Nt * N, M, 
+                          dtype=torch.complex64).to(device)
+    
+    for m in range(M):
+        Theta_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_M_tilde.dtype).to(device)
+        rm = lm[m] - lm[0]
+        for n1 in range(1, Lj - rm + 1):
+            x_n1 = W_M_tilde[:, rm+n1, m]
+            for n2 in range(1, Lj - rm + 1):
+                x_n2 = W_M_tilde[:, rm+n2, m]
+                for i in Nt_range:
+                    for j in Nt_range:
+                        block = delta_m_squared[m] * kron(
+                        eye(Nt, dtype=W_M_tilde.dtype, device=W_M_tilde.device), 
+                        x_n2.unsqueeze(-1).T
+                        ) @ AQAQH_M[:, :, m] @ kron(
+                        eye(Nt, dtype=W_M_tilde.dtype, device=W_M_tilde.device), x_n1.unsqueeze(-1)
+                        )
+                        Theta_m_tilde[i + Nt*n1 : i + Nt*n1 + 1, j + Nt*n2 : j + Nt*n2 + 1] = block
+#                Z = torch.outer(
+ #                   W_M_tilde[:, rm + n1 - 1, m], W_M_tilde[:, rm + n2 - 1, m].conj()
+  #                  )
+                # Z = W_M_tilde[:, rm + n1 - 1, m].unsqueeze(-1) * W_M_tilde[:, rm + n2 - 1, m].unsqueeze(-1).conj().T
+                # for q1 in range(Nt):
+                  #   for q2 in range(Nt):
+                  #       index1 = q1 + Nt * (n1 - 1)
+                        # index2 = q2 + Nt * (n2 - 1)
+                       #  Theta_tilde[index1, index2] = delta_m_squared[m] * torch.trace(
+                         #    Z @ aqaqh[..., q1, q2, m]).to(device)
+        
+        # Hermitianized
+        Theta_m[..., m] = (
+            Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].conj().T
+            ) / 2
+    
+    return Theta_m
 
 def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
     device = w_M.device

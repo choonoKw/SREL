@@ -62,7 +62,7 @@ class SRED_rep_rho(nn.Module):
                 y_batch = y_batch_M[m]
                 x_batch = torch.cat((s_batch.real, s_batch.imag, w_batch.real, w_batch.imag, y_batch), dim=1)
                 
-                rho_batch = self.est_rho_modules[update_step](x_batch)
+                rho_batch = self.est_rho_modules(x_batch)
                 
                 eta_batch = eta_sred(G_batch, H_batch, s_batch)
                 

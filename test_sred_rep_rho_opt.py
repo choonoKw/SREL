@@ -139,7 +139,7 @@ def main(weightdir):
     
     y_M = dataset.y_M
     
-    N_iter = 5
+    N_iter = 1
     
     f_sinr_stack_list = np.zeros((N_data, N_iter+1))    
     
@@ -227,7 +227,8 @@ def main(weightdir):
                 w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
                 
                 G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
-                H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
+                H_M = make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M)
+		 H_M0 = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 
