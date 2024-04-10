@@ -105,7 +105,7 @@ def main(save_weights, save_logs, save_mat,
     
     # Create a unique directory name using the current time and the N_step value
     log_dir = (
-        f'runs/intra_phase1/rep_rho/data{data_num:.0e}/'
+        f'runs/intra_phase1_mono/rep_rho/data{data_num:.0e}/'
         f'lambda_sinr{lambda_sinr:.0e}/'
         f'{start_time_tag}'
         f'_lambda_mono{lambda_mono:.0e}'
@@ -291,7 +291,7 @@ def main(save_weights, save_logs, save_mat,
     if save_mat:
         matfilename = "data_SRED_rho_10step_result.mat"
         dir_mat_save = (
-            f'mat/intra_phase1/rep_rho/{start_time_tag}'
+            f'mat/intra_phase1_mono/rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{worst_sinr_avg_db:.2f}dB'
         )
@@ -309,7 +309,7 @@ def main(save_weights, save_logs, save_mat,
         }
         # save
         dir_weight_save = (
-            f'weights/intra_phase1/rep_rho/{start_time_tag}'
+            f'weights/intra_phase1_mono/rep_rho/{start_time_tag}'
             f'_Nstep{N_step:02d}_batch{batch_size:02d}'
             f'_sinr_{worst_sinr_avg_db:.2f}dB'
         )
@@ -339,9 +339,9 @@ if __name__ == "__main__":
         batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-1)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-2)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-3)
     
     main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-3)
+        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-2, lambda_mono=1e-5)
     
 
