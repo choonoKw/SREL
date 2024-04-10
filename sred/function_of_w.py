@@ -61,11 +61,13 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
     M = struct_c.M;
     lm = struct_m.lm;
     delta_m = struct_m.delta_m;
+    delta_m_squared = delta_m ** 2
     
     # interference information
     K = struct_c.K;
     r = struct_k.r
     sigma_k = struct_k.sigma_k;
+    sigma_k_squared = sigma_k ** 2
     
     # sigma_v = struct_c.sigma_v;
     
@@ -95,10 +97,9 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
                         for q2 in range(Nt):
                             index1 = q1 + Nt * (n1 - 1)
                             index2 = q2 + Nt * (n2 - 1)
-                            # print('device of Z is {Z.device}')
-                            # print('device of aqaqh is {aqaqh.device}')
-                            # print('device of Phi_temp is {Phi_temp.device}')
-                            Phi_temp[index1, index2] = (delta_m[p]**2) * torch.trace(Z @ aqaqh[..., q1, q2, p])
+                            Phi_temp[index1, index2] = ( delta_m_squared[p] 
+                                                        * torch.trace(Z @ aqaqh[..., q1, q2, p])
+                                                        )
             Phi_m_tilde += Phi_temp
 
         # Sum_{k=1}^K
@@ -114,7 +115,9 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
                         # Z = W_M_tilde[:, rk_abs+n1, m].unsqueeze(-1) @ W_M_tilde[:, rk_abs+n2, m].conj().unsqueeze(0)
                         for q1 in range(Nt):
                             for q2 in range(Nt):
-                                Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = (sigma_k[k]**2) * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
+                                Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = ( sigma_k_squared[k] 
+                                                                    * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
+                                                                    )
             else:  # r[k] <= 0
                 for n1 in range(rk_abs, Lj):  # Adjusted ranges for Python 0-indexing
                     for n2 in range(rk_abs, Lj):
@@ -124,7 +127,9 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
                         # Z = W_M_tilde[:, n1-rk_abs, m].unsqueeze(-1) @ W_M_tilde[:, n2-rk_abs, m].conj().unsqueeze(0)
                         for q1 in range(Nt):
                             for q2 in range(Nt):
-                                Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = (sigma_k[k]**2) * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
+                                Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = ( sigma_k_squared[k] 
+                                                                    * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
+                                                                    )
         
             Phi_m_tilde += Phi_temp
 

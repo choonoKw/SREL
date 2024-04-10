@@ -107,6 +107,59 @@ def make_Sigma_opt(struct_c,struct_k,S_tilde,bqhbq):
 
     return Sigma
 
+def make_Sigma_opt2(struct_c,struct_k,S_tilde,bqhbq):    
+    Nr = struct_c.Nr;
+    
+    # interference information
+    K = struct_c.K;
+    r = struct_k.r;
+    sigma_k = struct_k.sigma_k;
+    sigma_k_squared = sigma_k ** 2
+    
+    Lj = struct_c.Lj;
+    
+    device = S_tilde.device
+    
+    # Initialize Sigma
+    Sigma = torch.zeros((Lj * Nr, Lj * Nr), dtype=torch.complex64).to(device)
+
+    range_Nr = range(1, Nr + 1)
+    # sum_{k=1}^K
+    for k in range(K):
+        Sigma_temp = torch.zeros((Lj * Nr, Lj * Nr), dtype=torch.complex64).to(device)
+        rk_abs = abs(r[k])
+        if r[k] < 0:
+            for n1 in range(1, Lj - rk_abs + 1):
+                for n2 in range(1, Lj - rk_abs + 1):
+                    Z_batch = ( S_tilde[:, rk_abs:rk_abs + Lj - rk_abs].unsqueeze(-1) 
+                               * S_tilde[:, rk_abs:rk_abs + Lj - rk_abs].unsqueeze(1).conj()
+                               )
+                    trace_results = torch.einsum('ij,ijkl->kl', Z_batch, bqhbq[..., k])
+                    
+                    indices1, indices2 = torch.meshgrid(
+                        torch.arange(Lj * Nr), torch.arange(Lj * Nr), indexing='ij')
+                    Sigma_temp[indices1, indices2] = sigma_k_squared[k] * trace_results
+                    
+        else:  # r[k] > 0
+            for n1 in range(rk_abs + 1, Lj + 1):
+                for n2 in range(rk_abs + 1, Lj + 1):
+                    Z = ( S_tilde[:, n1 - rk_abs - 1].unsqueeze(-1) 
+                         * S_tilde[:, n2 - rk_abs - 1].unsqueeze(0).conj()
+                    )
+                    
+                    for q1 in range_Nr:
+                        for q2 in range_Nr:
+                            index1 = (q1 - 1) + Nr * (n1 - 1)
+                            index2 = (q2 - 1) + Nr * (n2 - 1)
+                            Sigma_temp[index1, index2] = ( 
+                                sigma_k_squared[k] * torch.trace(
+                                    Z @ bqhbq[:, :, q1 - 1, q2 - 1, k])
+                            )
+
+        Sigma += Sigma_temp
+
+    return Sigma
+
 def make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq):
     device = S_tilde.device
     Nr = struct_c.Nr;

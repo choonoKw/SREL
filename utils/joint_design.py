@@ -85,16 +85,16 @@ def test(constants, model_test, eps_f):
             print(' ')
             
             ##### test
-            Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
+            # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
             
-            Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
+            # Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
             
-            Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+            # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
             
-            w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
+            # w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
             
-            G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
-            H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
+            # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+            # H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
             ####
             start_time_epoch = time.time()
             for idx_iter in range(N_iter):
