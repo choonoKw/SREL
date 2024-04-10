@@ -164,11 +164,11 @@ with torch.no_grad():
         
         start_time = time.time()
         Sigma2 = make_Sigma_opt(struct_c, struct_k, S_tilde, bqhbq)
-        time_spent1 = time.time() - start_time
+        time_spent2 = time.time() - start_time
         
         start_time = time.time()
         Sigma3 = make_Sigma_opt2(struct_c,struct_k,S_tilde,bqhbq)
-        time_spent1 = time.time() - start_time
+        time_spent3 = time.time() - start_time
         
         Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
         

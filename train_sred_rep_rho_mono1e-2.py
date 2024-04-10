@@ -245,6 +245,89 @@ def main(save_weights, save_logs, save_mat,
             formatted_time_left = format_time(time_left)
             print(f"{formatted_time_left} left")
         
+        ## extra learning
+        dataset = TrainingDataSet(f'data/data_trd_1e+02_val.mat')
+        y_M = dataset.y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
+
+        # Split dataset into training and validation
+        train_indices, val_indices = train_test_split(
+            range(len(dataset)),
+            test_size=0.2,  # 20% for validation
+            random_state=42
+        )
+        train_dataset = Subset(dataset, train_indices)
+        val_dataset = Subset(dataset, val_indices)
+
+        # batch_size = 10
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+
+        model_intra_phase1.train()  # Set model to training mode
+        
+        for phi_batch, w_M_batch, G_M_batch, H_M_batch in train_loader:
+            phi_batch = phi_batch.to(device)
+            G_M_batch = G_M_batch.to(device)
+            H_M_batch = H_M_batch.to(device)
+            w_M_batch = w_M_batch.to(device)
+            
+            # batch_size_current = phi_batch.size(0)
+            # y_batch_M = y_M.unsqueeze(1).expand(-1, batch_size_current, -1).transpose(0, 2)
+
+
+            # Perform training steps
+            optimizer.zero_grad()
+
+            model_outputs = model_intra_phase1(
+                phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+
+            # s_stack_batch = model_outputs['s_stack_batch']
+            loss, _ = custom_loss_sred_mono(
+                constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
+
+            loss.backward()
+            optimizer.step()
+
+
+        # Validation phase
+        model_intra_phase1.eval()  # Set model to evaluation mode
+        model_intra_tester = SREL_intra_phase1_tester(constants, model_intra_phase1).to(device)
+        model_intra_tester.device = device
+
+        
+        sum_of_worst_sinr_extra_avg = 0.0
+        
+        with torch.no_grad():  # Disable gradient computation
+            for phi_batch, w_M_batch, G_M_batch, H_M_batch in test_loader:
+                # s_batch = modulus * torch.exp(1j * phi_batch)
+                phi_batch = phi_batch.to(device)
+                G_M_batch = G_M_batch.to(device)
+                H_M_batch = H_M_batch.to(device)
+                w_M_batch = w_M_batch.to(device)
+                y_M = y_M.to(device)  # If y_M is a tensor that requires to be on the GPU
+                
+                # batch_size_current = phi_batch.size(0)
+                # y_batch_M = y_M.unsqueeze(1).expand(-1, batch_size_current, -1).transpose(0, 2)
+                
+                model_outputs = model_intra_phase1(
+                    phi_batch, w_M_batch, y_M, G_M_batch, H_M_batch)
+
+                val_loss, N_vl = custom_loss_sred_mono(
+                    constants, G_M_batch, H_M_batch, hyperparameters, model_outputs)
+                
+                    
+                s_stack_batch = model_outputs['s_stack_batch']
+                s_optimal_batch = s_stack_batch[:,-1,:].squeeze()
+
+                sum_of_worst_sinr_extra_avg+= np.sum(
+                    worst_sinr_function(constants, s_optimal_batch, G_M_batch, H_M_batch)
+                    )/batch_size
+                
+        worst_sinr_extra_avg_db = 10*np.log10(
+            sum_of_worst_sinr_extra_avg/len(test_loader)
+            )
+        if epoch == 0 or (epoch+1) % epoch_counter == 0:
+            print(f'average_worst_sinr_extra = {worst_sinr_extra_avg_db:.2f} dB')
+        
         
         
         
