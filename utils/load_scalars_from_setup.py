@@ -46,7 +46,13 @@ def load_param_from_setup(file_path, device):
     
     Upsilon = torch.tensor(data['Upsilon'], dtype=torch.complex64).to(device)
     
-    return struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon
+    AQAQH_M = torch.tensor(data['AQAQH_M'], dtype=torch.complex64).to(device)
+    AQHAQ_M = torch.tensor(data['AQHAQ_M'], dtype=torch.complex64).to(device)
+    BQBQH_K = torch.tensor(data['BQBQH_K'], dtype=torch.complex64).to(device)
+    BQHBQ_K = torch.tensor(data['BQHBQ_K'], dtype=torch.complex64).to(device)
+    
+    return (struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon,
+            AQAQH_M, AQHAQ_M, BQBQH_K, BQHBQ_K)
     
 class Struct_c:
     def __init__(self, data):
