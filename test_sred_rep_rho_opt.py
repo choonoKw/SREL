@@ -80,7 +80,7 @@ def main(weightdir):
     
     constants['modulus'] = 1 / torch.sqrt(torch.tensor(Nt * N, dtype=torch.float))
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     ###############################################################
     ## Load weight
     ###############################################################
