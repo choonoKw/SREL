@@ -54,7 +54,7 @@ def main(save_weights, save_logs, save_mat, lambda_eta,weightdir):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e1
+    data_num = 1e2
     
     
     # loading constant
@@ -102,7 +102,7 @@ def main(save_weights, save_logs, save_mat, lambda_eta,weightdir):
     # Initialize model
     model_intra_phase2 = SREL_rep_eta(constants, model_intra_phase1)
     
-    num_epochs = 5
+    num_epochs = 50
     # Initialize the optimizer
     batch_size=5
     learning_rate=1e-5
