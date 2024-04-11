@@ -46,7 +46,7 @@ def make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh):
                             Z @ aqaqh[..., q1, q2, m]).to(device)
         
         # Hermitianized
-        Theta_m[..., m] = (
+        Theta_m[:,:, m] = (
             Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].conj().T
             ) / 2
     
@@ -85,7 +85,7 @@ def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
                     ] = delta_m_squared[m] * (
                         kron(eye(Nt), x_n2.conj().T) @ AQAQH_M[:,:,m] @ kron(eye(Nt), x_n1)
         # Hermitianized
-        Theta_m[..., m] = (
+        Theta_m[:,:, m] = (
             Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].conj().T
             ) / 2
     
@@ -140,7 +140,7 @@ def make_Theta_M_opt2(struct_c,struct_m,W_M_tilde,AQAQH_M):
                          #    Z @ aqaqh[..., q1, q2, m]).to(device)
         
         # Hermitianized
-        Theta_m[..., m] = (
+        Theta_m[:,:, m] = (
             Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].conj().T
             ) / 2
     
