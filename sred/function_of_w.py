@@ -84,6 +84,7 @@ def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
                     np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                     ] = delta_m_squared[m] * (
                         kron(eye(Nt), x_n2.conj().T) @ AQAQH_M[:,:,m] @ kron(eye(Nt), x_n1)
+                        )
         # Hermitianized
         Theta_temp = (
             Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].conj().T
@@ -291,6 +292,7 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
                         np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                         ] = delta_m_squared[p] * (
                             kron(eye(Nt), x_n2.conj().T) @ AQAQH_M[:,:,p] @ kron(eye(Nt), x_n1)
+                            )
                     # Z = torch.outer(
                     #     W_M_tilde[:, rp + n1 - 1, m], W_M_tilde[:, rp + n2 - 1, m].conj()
                     #     )
@@ -317,6 +319,7 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
                             np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                             ] = sigma_k_squared[k] * (
                                 kron(eye(Nt), x_n2.conj().T) @ BQBQH_K[:,:,k] @ kron(eye(Nt), x_n1)
+                                )
                         # Z = torch.outer(
                         #     W_M_tilde[:, rk_abs+n1, m], W_M_tilde[:, rk_abs+n2, m].conj()
                         #     )
