@@ -80,7 +80,7 @@ def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
             x_n1 = W_M_tilde[:, rm + n1 - 1, m].unsqueeze(-1);
             for n2 in range(1, Lj - rm + 1):
                 x_n2 = W_M_tilde[:, rm + n2 - 1, m].unsqueeze(-1);
-                Theta_m_tilde[
+                Theta_tilde[
                     np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                     ] = delta_m_squared[m] * (
                         kron(eye(Nt), x_n2.conj().T) @ AQAQH_M[:,:,m] @ kron(eye(Nt), x_n1)
