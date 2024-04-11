@@ -64,7 +64,7 @@ import argparse
 
 # import torch.nn as nn
 
-def main(weightdir):
+def main(weightdir, N_iter):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -144,7 +144,11 @@ def main(weightdir):
     
     y_M = dataset.y_M
     
-    N_iter = 1
+    
+    if not(N_iter):
+        N_iter = 5
+        
+    
     
     f_sinr_stack_list = np.zeros((N_data, N_iter+1))    
     
@@ -285,10 +289,12 @@ if __name__ == "__main__":
     
     parser.add_argument("--weightdir", type=str, 
                         help="Save the model weights after training")
-    # parser.add_argument("--save-mat", action="store_true",
-    #                     help="Save mat file including worst-sinr values")
+    
+    
+    parser.add_argument("--iter", type=int,
+                        help="Set the number of iteration")
     
     args = parser.parse_args()
     
-    main(weightdir=args.weightdir)
+    main(weightdir=args.weightdir, N_iter=args.iter)
     
