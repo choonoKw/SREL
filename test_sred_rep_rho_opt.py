@@ -326,5 +326,5 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(weightdir=args.weightdir, N_iter=args.iter, ave_mat=args.save_mat)
+    main(weightdir=args.weightdir, N_iter=args.iter, save_mat=args.save_mat)
     
