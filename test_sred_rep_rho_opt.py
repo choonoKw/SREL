@@ -82,14 +82,15 @@ def main(weightdir, N_iter, save_mat):
     ###############################################################
     # Load the bundled dictionary
     if weightdir:
-        dir_dict_saved = weightdir
-        loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
+        # dir_dict_saved = weightdir
+        loaded_dict = torch.load(os.path.join(weightdir,'model_with_attrs.pth'), 
                                  map_location=device)
     else:
-        dir_dict_saved = (
+        # weightdir = 
+        weightdir = (
             'weights/sred_rep_rho/'
             '20240408-154610_Nstep10_batch05_sinr_15.44dB')
-        loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
+        loaded_dict = torch.load(os.path.join(weightdir,'model_with_attrs.pth'), 
                                  map_location=device)
             
     state_dict = loaded_dict['state_dict']
@@ -133,7 +134,7 @@ def main(weightdir, N_iter, save_mat):
     dataset = TrainingDataSet('data/data_trd_1e+02_val.mat')
     N_data = len(dataset)
     M = constants['M']
-    # modulus = constants['modulus']
+    modulus = constants['modulus']
     
     # val_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     
@@ -170,24 +171,11 @@ def main(weightdir, N_iter, save_mat):
             worst_sinr_stack_list[idx_data,0] = torch.min(sinr_db_M).item()
             
             
-            
-            ##### test
-            # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
-            
-            # Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
-            
-            # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
-            
-            # w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
-            
-            # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
-            # H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
-            ####
             start_time_total = time.time()
             for idx_iter in range(N_iter):
                 start_time_iter = time.time()
-                # s = modulus*torch.exp(1j *phi) 
                 
+                # s = modulus*torch.exp(1j *phi)                 
                 # we need to make new functions so that we do not need to squeeze/unsqueeze
                 # G_M_batch = G_M.unsqueeze(0)
                 # H_M_batch = H_M.unsqueeze(0)
@@ -197,90 +185,45 @@ def main(weightdir, N_iter, save_mat):
                 
                 # f_sinr = sum_of_sinr_reciprocal(G_M_batch, H_M_batch, s_batch)
                 
+                # inference
                 phi = model_intra_tester(phi, w_M, y_M, G_M, H_M)
                 
                 # record values
                 s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
                 
-                f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
-                
-                f_sinr_db = 10*torch.log10(f_sinr)
-                
-                f_stack_list[idx_data,0] = f_sinr_db.item()
-                
-                sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
-                
-                worst_sinr_stack_list[idx_data,0] = torch.min(sinr_db_M).item()
-                
-                
-                #print(f'idx_iter={idx_iter}, '
-                #      f'f_sinr = {f_sinr_db:.2f}')
-                #for m in range(M):
-                #    print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
-                    
-                
-                
-                
-                # if abs(
-                #         f_stack_list[idx_data,idx_iter+1]
-                #         -f_stack_list[idx_data,idx_iter])<eps_f:
-                #     break
-                
+                # update for functions of s
                 Sigma = make_Sigma_opt(struct_c,struct_k,S_tilde,BQHBQ_K)
                 
                 Gamma_M = make_Gamma_M_opt(struct_c,struct_m,S_tilde,AQHAQ_M)
                 
                 Psi_M = make_Psi_M_opt(struct_c,struct_m,S_tilde,AQHAQ_M,Sigma,Upsilon)
                 
+                # derive the closed form of w_M
                 w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
-                
-                # start_time = time.time()
-                # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
-                # time_spent1 = time.time() - start_time
-                
-                # start_time = time.time()
+
+
+                # functions of w_M
                 G_M = make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsilon)
-                # time_spent2 = time.time() - start_time
-                
-                # gap = torch.max(torch.abs(G_M-G_M2))
-                # mean = torch.mean(torch.abs(G_M))
-                
-                # print(f'G_M, gap = {gap:.2e} with mean {mean:.2e}')
-                
-                # print(f'G_M took {time_spent1:.2f} seconds, '
-                #       f'G_M2 took {time_spent2:.2f} seconds, ')
-                
-                # start_time = time.time()
-                # H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
-                # time_spent1 = time.time() - start_time
-                
-                # start_time = time.time()
+
                 H_M = make_Theta_M_opt(struct_c, struct_m, W_M_tilde, AQAQH_M)
-                # time_spent2 = time.time() - start_time
-                
-                # gap = torch.max(torch.abs(H_M-H_M2))
-                # mean = torch.mean(torch.abs(H_M))
-                
-                # print(f'G_M, gap = {gap:.2e} with mean {mean:.2e}')
-                
-                # print(f'G_M took {time_spent1:.2f} seconds, '
-                #       f'G_M2 took {time_spent2:.2f} seconds, ')
+
                 
                 f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
                 
                 f_sinr_db = 10*torch.log10(f_sinr)
                 
-                f_stack_list[idx_data,0] = f_sinr_db.item()
+                f_stack_list[idx_data,idx_iter] = f_sinr_db.item()
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 
                 worst_sinr_db = torch.min(sinr_db_M)
                 
-                worst_sinr_stack_list[idx_data,0] = worst_sinr_db.item()
+                worst_sinr_stack_list[idx_data,idx_iter] = worst_sinr_db.item()
                 
                 # print('w_M is updated')
                 print(f'idx_iter={idx_iter}, '
-                      f'f_sinr = {f_sinr_db:.2f}')
+                      f'f_sinr = {f_sinr_db:.2f}, '
+                      f'worst_SINR = {worst_sinr_db:.2f} dB')
                 for m in range(M):
                     print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
                 print(' ')
@@ -300,10 +243,7 @@ def main(weightdir, N_iter, save_mat):
             
     if save_mat:
         matfilename = "data_infer_result.mat"
-        dir_mat_save = (
-            f'mat/sred_rep_rho_mono/'
-            f'_sinr_{worst_sinr_db:.2f}dB'
-        )
+        dir_mat_save = weightdir
         os.makedirs(dir_mat_save, exist_ok=True)
         save_result_mat(os.path.join(dir_mat_save, matfilename), 
                         worst_sinr_stack_list, f_stack_list)
