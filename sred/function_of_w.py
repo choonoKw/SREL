@@ -77,9 +77,9 @@ def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
         Theta_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_M_tilde.dtype).to(device)
         rm = lm[m] - lm[0]
         for n1 in range(1, Lj - rm + 1):
-            x_n1 = W_M_tilde[:, rm + n1 - 1, m]
+            x_n1 = W_M_tilde[:, rm + n1 - 1, m].unsqueeze(-1);
             for n2 in range(1, Lj - rm + 1):
-                x_n2 = W_M_tilde[:, rm + n2 - 1, m]
+                x_n2 = W_M_tilde[:, rm + n2 - 1, m].unsqueeze(-1);
                 Theta_m_tilde[
                     np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                     ] = delta_m_squared[m] * (
@@ -285,9 +285,9 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
             Phi_temp = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64).to(device)
             rp = lm[p] - lm[0]
             for n1 in range(1, Lj - rp + 1):
-                x_n1 = W_M_tilde[:, rp + n1 - 1, m]
+                x_n1 = W_M_tilde[:, rp + n1 - 1, m].unsqueeze(-1);
                 for n2 in range(1, Lj - rp + 1):
-                    x_n2 = W_M_tilde[:, rp + n2 - 1, m]
+                    x_n2 = W_M_tilde[:, rp + n2 - 1, m].unsqueeze(-1);
                     Phi_temp[
                         np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                         ] = delta_m_squared[p] * (
@@ -312,9 +312,9 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
             rk_abs = abs(r[k])
             if r[k] > 0:
                 for n1 in range(Lj-rk_abs):  # Python range is exclusive on the upper bound
-                    x_n1 = W_M_tilde[:, rk_abs+n1, m]
+                    x_n1 = W_M_tilde[:, rk_abs+n1, m].unsqueeze(-1);
                     for n2 in range(Lj-rk_abs):
-                        x_n2 = W_M_tilde[:, rk_abs+n2, m]
+                        x_n2 = W_M_tilde[:, rk_abs+n2, m].unsqueeze(-1);
                         Phi_temp[
                             np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                             ] = sigma_k_squared[k] * (
@@ -331,9 +331,9 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
                         #                                             )
             else:  # r[k] <= 0
                 for n1 in range(rk_abs, Lj):  # Adjusted ranges for Python 0-indexing
-                    x_n1 = W_M_tilde[:, n1-rk_abs, m]
+                    x_n1 = W_M_tilde[:, n1-rk_abs, m].unsqueeze(-1);
                     for n2 in range(rk_abs, Lj):
-                        x_n2 = W_M_tilde[:, n2-rk_abs, m]
+                        x_n2 = W_M_tilde[:, n2-rk_abs, m].unsqueeze(-1);
                         Phi_temp[
                             np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                             ] = sigma_k_squared[k] * (
