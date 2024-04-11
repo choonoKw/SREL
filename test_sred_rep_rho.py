@@ -158,7 +158,7 @@ def main(weightdir):
             s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
             f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
             f_sinr_stack_list[idx_data,0] = f_sinr
-            f_sinr_db = 10*np.log10(f_sinr)
+            f_sinr_db = 10*torch.log10(f_sinr)
             
             sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
             
