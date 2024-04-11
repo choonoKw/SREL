@@ -259,9 +259,9 @@ def main(save_weights, save_logs, save_mat,
     
     if save_logs:
         formatted_string = (f'Train Loss = {average_train_loss_db:.2f} dB, '
-                    f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
-                    f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB, \n'
-                    f'Computation time = {formatted_time_left}')
+                            f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
+                            f'average_worst_sinr = {worst_sinr_avg_db:.2f} dB, '
+                            f'# of violation = {N_vl_avg:.2f}')
         
         file_name = os.path.join(log_dir,'training_log.txt')
         with open(file_name, 'a') as file:

@@ -32,8 +32,11 @@ from model.srel_intra_infer import SREL_intra_phase1_infer
 
 from sred.functions import sum_of_sinr_reciprocal, sinr_values, derive_s, derive_w
 
-from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma, make_Sigma_opt
+from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma
+from sred.function_of_s import make_Gamma_M_opt, make_Psi_M_opt, make_Sigma_opt
+
 from sred.function_of_w import make_Phi_M, make_Theta_M
+from sred.function_of_w import make_Phi_M_opt, make_Theta_M_opt
 
 
 # from utils.custom_loss_intra import custom_loss_intra_phase1
@@ -127,7 +130,8 @@ def main(weightdir):
     
     # worst_sinr_stack_list, f_stack_list = test(constants,model_intra_tester,1e-7)
     
-    struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon = load_param_from_setup(
+    (struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon,
+     AQAQH_M, AQHAQ_M, BQBQH_K, BQHBQ_K) = load_param_from_setup(
         'data/data_setup.mat', device)
     
     dataset = TrainingDataSet('data/data_trd_1e+02_val.mat')
@@ -162,12 +166,7 @@ def main(weightdir):
             
             sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
             
-            print(f'idx_iter={idx_iter}, '
-            f'f_sinr = {f_sinr_db:.2f}')
-            for m in range(M):
-                print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
-                
-            print(' ')
+            
             
             ##### test
             # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
@@ -213,26 +212,28 @@ def main(weightdir):
                 
                 
                 
-                if abs(
-                        f_sinr_stack_list[idx_data,idx_iter+1]
-                        -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
-                    break
+                # if abs(
+                #         f_sinr_stack_list[idx_data,idx_iter+1]
+                #         -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
+                #     break
                 
-                Sigma = make_Sigma_opt(struct_c,struct_k,S_tilde,bqhbq)
+                Sigma = make_Sigma_opt(struct_c,struct_k,S_tilde,BQHBQ_K)
                 
-                Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
+                Gamma_M = make_Gamma_M_opt(struct_c,struct_m,S_tilde,AQHAQ_M)
                 
-                Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+                Psi_M = make_Psi_M_opt(struct_c,struct_m,S_tilde,AQHAQ_M,Sigma,Upsilon)
                 
                 w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
                 
-                G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+                # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+                
                 H_M = make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M)
-		 H_M0 = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 
                 # print('w_M is updated')
+                print(f'idx_iter={idx_iter}, '
+                      f'f_sinr = {f_sinr_db:.2f}')
                 for m in range(M):
                     print(f'sinr_{m+1:d} = {sinr_db_M[m].item():.2f}',end=', ')
                 print(' ')

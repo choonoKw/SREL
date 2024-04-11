@@ -62,6 +62,7 @@ def custom_loss_intra_phase1_mono(constants, G_batch, H_batch, hyperparameters, 
     s_batch =  s_stack_batch[:,0,:]
     f_sinr_t1_batch = reciprocal_sinr(G_batch, H_batch, s_batch)
     
+    N_vl_sum = 0 # number of violation of monotonicity
     for update_step in range(N_step):
         s_batch =  s_stack_batch[:,update_step+1,:]
             
@@ -72,6 +73,10 @@ def custom_loss_intra_phase1_mono(constants, G_batch, H_batch, hyperparameters, 
                 hyperparameters['lambda_mono']*(f_sinr_t2_batch-f_sinr_t1_batch)
             )
         )/batch_size
+        
+        N_vl_sum += torch.sum(
+            (f_sinr_t2_batch - f_sinr_t1_batch > 0).int()
+            )
         
     s_batch =  s_stack_batch[:,-1,:]
     
@@ -90,7 +95,9 @@ def custom_loss_intra_phase1_mono(constants, G_batch, H_batch, hyperparameters, 
     
     loss_avg = loss / batch_size 
     
-    return loss_avg, sinr_opt_avg
+    N_vl_avg = N_vl_sum / batch_size
+    
+    return loss_avg, sinr_opt_avg, N_vl_avg
 
 # def custom_loss_intra_phase2(constants, G_batch, H_batch, hyperparameters, model_outputs):
 #     N_step = constants['N_step']

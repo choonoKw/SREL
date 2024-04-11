@@ -128,6 +128,7 @@ def main(save_weights, save_logs, save_mat,
         total_val_loss = 0.0
         
         sum_of_worst_sinr_avg = 0.0  # Accumulate loss over all batches
+        N_vl_sum = 0.0
         
         start_time_epoch = time.time()  # Start timing the inner loop
         for idx_case in range(num_case):
@@ -167,7 +168,7 @@ def main(save_weights, save_logs, save_mat,
                     model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
 
                     # s_stack_batch = model_outputs['s_stack_batch']
-                    loss, _ = custom_loss_intra_phase1_mono(
+                    loss, _ , _ = custom_loss_intra_phase1_mono(
                         constants, G_batch, H_batch, hyperparameters, model_outputs)
     
                     loss.backward()
@@ -203,11 +204,11 @@ def main(save_weights, save_logs, save_mat,
                         
                         model_outputs = model_intra_phase1(phi_batch, w_batch, y, G_batch, H_batch)
 
-                        val_loss, sinr_opt_avg = custom_loss_intra_phase1_mono(
+                        val_loss, sinr_opt_avg, N_vl = custom_loss_intra_phase1_mono(
                             constants, G_batch, H_batch, hyperparameters, model_outputs)
                         
                         total_val_loss += val_loss.item()
-                        
+                        N_vl_sum += N_vl
                         # model_intra_tester
                         
                         # s_stack_batch = model_outputs['s_stack_batch']
@@ -239,6 +240,8 @@ def main(save_weights, save_logs, save_mat,
         average_val_loss_db = 10*np.log10(average_val_loss)
         validation_losses.append(average_val_loss_db)
         
+        N_vl_avg = N_vl_sum / num_case
+        
         if save_logs:
             writer.add_scalar('Loss/Training [dB]', average_train_loss_db, epoch)
             writer.add_scalar('Loss/Testing [dB]', average_val_loss_db, epoch)
@@ -251,7 +254,8 @@ def main(save_weights, save_logs, save_mat,
             print(f'Epoch [{epoch+1}/{num_epochs}], '
                  f'Train Loss = {average_train_loss_db:.2f} dB, '
                  f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
-                 f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB')
+                 f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB'
+                 f'# of violation = {N_vl_avg:.2f}')
             
             time_spent_epoch = time.time() - start_time_epoch  # Time spent in the current inner loop iteration
             time_left = time_spent_epoch * (num_epochs - epoch - 1)  # Estimate the time left
@@ -272,9 +276,9 @@ def main(save_weights, save_logs, save_mat,
     
     if save_logs:
         formatted_string = (f'Train Loss = {average_train_loss_db:.2f} dB, '
-                    f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
-                    f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB, \n'
-                    f'Computation time = {formatted_time_left}')
+                            f'Testing Loss = {average_val_loss_db:.2f} dB, \n'
+                            f'average_worst_sinr = {worst_sinr_avg_db:.4f} dB'
+                            f'# of violation = {N_vl_avg:.2f}')
         
         file_name = os.path.join(log_dir,'training_log.txt')
         with open(file_name, 'a') as file:

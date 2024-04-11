@@ -6,7 +6,9 @@ Created on Sun Apr  7 01:35:25 2024
 """
 
 import torch
-# import numpy as np
+import numpy as np
+from torch import kron, eye
+from numpy.linalg import matrix_power
 
 def make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh):
     device = W_M_tilde.device
@@ -49,7 +51,7 @@ def make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh):
             ) / 2
     
     return Theta_m
-    
+
 def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
     device = W_M_tilde.device
     
@@ -66,7 +68,47 @@ def make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M):
     Lj = struct_c.Lj
     
     # Initialize Theta_m
+    # Nt_range = torch.arange(Nt, dtype=torch.long, device=device)
+    Nt_range = np.arange(Nt)
+    Theta_m = torch.zeros(Nt * N, Nt * N, M, 
+                          dtype=torch.complex64).to(device)
+    
+    for m in range(M):
+        Theta_tilde = torch.zeros(Lj * Nt, Lj * Nt, dtype=W_M_tilde.dtype).to(device)
+        rm = lm[m] - lm[0]
+        for n1 in range(1, Lj - rm + 1):
+            x_n1 = W_M_tilde[:, rm + n1 - 1, m]
+            for n2 in range(1, Lj - rm + 1):
+                x_n2 = W_M_tilde[:, rm + n2 - 1, m]
+                Theta_m_tilde[
+                    np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
+                    ] = delta_m_squared[m] * (
+                        kron(eye(Nt), x_n2.conj().T) @ AQAQH_M[:,:,m] @ kron(eye(Nt), x_n1)
+        # Hermitianized
+        Theta_m[..., m] = (
+            Theta_tilde[:Nt * N, :Nt * N] + Theta_tilde[:Nt * N, :Nt * N].conj().T
+            ) / 2
+    
+    return Theta_m
+    
+def make_Theta_M_opt2(struct_c,struct_m,W_M_tilde,AQAQH_M):
+    device = W_M_tilde.device
+    
+    Nt = struct_c.Nt
+    N = struct_c.N
+    M = struct_c.M
+    
+    # target information
+    lm = struct_m.lm
+    delta_m = struct_m.delta_m
+    delta_m_squared = delta_m ** 2
+    
+    
+    Lj = struct_c.Lj
+    
+    # Initialize Theta_m
     Nt_range = torch.arange(Nt, dtype=torch.long, device=device)
+    
     Theta_m = torch.zeros(Nt * N, Nt * N, M, 
                           dtype=torch.complex64).to(device)
     
@@ -225,6 +267,7 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
         # W_M_tilde[:, :, m] = w_M[:, m].reshape(Lj,Nr).T
 
     # Make Phi_m
+    Nt_range = np.arange(Nt)
     Phi_m = torch.zeros((Nt * N, Nt * N, M), dtype=torch.complex64).to(device)
     for m in range(M):
         Phi_m_tilde = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64).to(device)
@@ -235,18 +278,24 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
             Phi_temp = torch.zeros((Lj * Nt, Lj * Nt), dtype=torch.complex64).to(device)
             rp = lm[p] - lm[0]
             for n1 in range(1, Lj - rp + 1):
+                x_n1 = W_M_tilde[:, rp + n1 - 1, m]
                 for n2 in range(1, Lj - rp + 1):
-                    Z = torch.outer(
-                        W_M_tilde[:, rp + n1 - 1, m], W_M_tilde[:, rp + n2 - 1, m].conj()
-                        )
-                    # Z = W_M_tilde[:, rp + n1 - 1, m].unsqueeze(-1) * W_M_tilde[:, rp + n2 - 1, m].unsqueeze(0).conj()
-                    for q1 in range(Nt):
-                        for q2 in range(Nt):
-                            index1 = q1 + Nt * (n1 - 1)
-                            index2 = q2 + Nt * (n2 - 1)
-                            Phi_temp[index1, index2] = ( delta_m_squared[p] 
-                                                        * torch.trace(Z @ aqaqh[..., q1, q2, p])
-                                                        )
+                    x_n2 = W_M_tilde[:, rp + n2 - 1, m]
+                    Phi_temp[
+                        np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
+                        ] = delta_m_squared[p] * (
+                            kron(eye(Nt), x_n2.conj().T) @ AQAQH_M[:,:,p] @ kron(eye(Nt), x_n1)
+                    # Z = torch.outer(
+                    #     W_M_tilde[:, rp + n1 - 1, m], W_M_tilde[:, rp + n2 - 1, m].conj()
+                    #     )
+                    # # Z = W_M_tilde[:, rp + n1 - 1, m].unsqueeze(-1) * W_M_tilde[:, rp + n2 - 1, m].unsqueeze(0).conj()
+                    # for q1 in range(Nt):
+                    #     for q2 in range(Nt):
+                    #         index1 = q1 + Nt * (n1 - 1)
+                    #         index2 = q2 + Nt * (n2 - 1)
+                    #         Phi_temp[index1, index2] = ( delta_m_squared[p] 
+                    #                                     * torch.trace(Z @ aqaqh[..., q1, q2, p])
+                    #                                     )
             Phi_m_tilde += Phi_temp
 
         # Sum_{k=1}^K
@@ -255,28 +304,40 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
             rk_abs = abs(r[k])
             if r[k] > 0:
                 for n1 in range(Lj-rk_abs):  # Python range is exclusive on the upper bound
+                    x_n1 = W_M_tilde[:, rk_abs+n1, m]
                     for n2 in range(Lj-rk_abs):
-                        Z = torch.outer(
-                            W_M_tilde[:, rk_abs+n1, m], W_M_tilde[:, rk_abs+n2, m].conj()
-                            )
-                        # Z = W_M_tilde[:, rk_abs+n1, m].unsqueeze(-1) @ W_M_tilde[:, rk_abs+n2, m].conj().unsqueeze(0)
-                        for q1 in range(Nt):
-                            for q2 in range(Nt):
-                                Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = ( sigma_k_squared[k] 
-                                                                    * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
-                                                                    )
+                        x_n2 = W_M_tilde[:, rk_abs+n2, m]
+                        Phi_temp[
+                            np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
+                            ] = sigma_k_squared[k] * (
+                                kron(eye(Nt), x_n2.conj().T) @ BQBQH_K[:,:,k] @ kron(eye(Nt), x_n1)
+                        # Z = torch.outer(
+                        #     W_M_tilde[:, rk_abs+n1, m], W_M_tilde[:, rk_abs+n2, m].conj()
+                        #     )
+                        # # Z = W_M_tilde[:, rk_abs+n1, m].unsqueeze(-1) @ W_M_tilde[:, rk_abs+n2, m].conj().unsqueeze(0)
+                        # for q1 in range(Nt):
+                        #     for q2 in range(Nt):
+                        #         Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = ( sigma_k_squared[k] 
+                        #                                             * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
+                        #                                             )
             else:  # r[k] <= 0
                 for n1 in range(rk_abs, Lj):  # Adjusted ranges for Python 0-indexing
+                    x_n1 = W_M_tilde[:, n1-rk_abs, m]
                     for n2 in range(rk_abs, Lj):
-                        Z = torch.outer(
-                            W_M_tilde[:, n1-rk_abs, m], W_M_tilde[:, n2-rk_abs, m].conj()
-                            )
-                        # Z = W_M_tilde[:, n1-rk_abs, m].unsqueeze(-1) @ W_M_tilde[:, n2-rk_abs, m].conj().unsqueeze(0)
-                        for q1 in range(Nt):
-                            for q2 in range(Nt):
-                                Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = ( sigma_k_squared[k] 
-                                                                    * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
-                                                                    )
+                        x_n2 = W_M_tilde[:, n2-rk_abs, m]
+                        Phi_temp[
+                            np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
+                            ] = sigma_k_squared[k] * (
+                                kron(eye(Nt), x_n2.conj().T) @ BQBQH_K[:,:,k] @ kron(eye(Nt), x_n1)
+                        # Z = torch.outer(
+                        #     W_M_tilde[:, n1-rk_abs, m], W_M_tilde[:, n2-rk_abs, m].conj()
+                        #     )
+                        # # Z = W_M_tilde[:, n1-rk_abs, m].unsqueeze(-1) @ W_M_tilde[:, n2-rk_abs, m].conj().unsqueeze(0)
+                        # for q1 in range(Nt):
+                        #     for q2 in range(Nt):
+                        #         Phi_temp[q1 + Nt*n1, q2 + Nt*n2] = ( sigma_k_squared[k] 
+                        #                                             * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
+                        #                                             )
         
             Phi_m_tilde += Phi_temp
 
