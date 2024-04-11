@@ -57,14 +57,9 @@ from utils.format_time import format_time
 import os
 import argparse
 
-# from utils.joint_design import test
-# from utils.save_result_mat import save_result_mat
+from utils.save_result_mat import save_result_mat
 
-# from utils.format_time import format_time
-
-# import torch.nn as nn
-
-def main(weightdir, N_iter):
+def main(weightdir, N_iter, save_mat):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -148,9 +143,10 @@ def main(weightdir, N_iter):
     if not(N_iter):
         N_iter = 5
         
+
     
-    
-    f_sinr_stack_list = np.zeros((N_data, N_iter+1))    
+    f_stack_list = np.zeros((N_data, N_iter+1))   
+    worst_sinr_stack_list = np.zeros((N_data, N_iter+1))   
     
     with torch.no_grad():            
         G_M_list = dataset.G_M_list.to(device)
@@ -166,10 +162,12 @@ def main(weightdir, N_iter):
             
             s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
             f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
-            f_sinr_stack_list[idx_data,0] = f_sinr
+            f_stack_list[idx_data,0] = f_sinr.item()
             f_sinr_db = 10*torch.log10(f_sinr)
             
             sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+            
+            worst_sinr_stack_list[idx_data,0] = torch.min(sinr_db_M).item()
             
             
             
@@ -203,11 +201,16 @@ def main(weightdir, N_iter):
                 
                 # record values
                 s, S_tilde = derive_s(constants, phi, struct_c, struct_m)
-                f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s).item()
-                f_sinr_stack_list[idx_data,idx_iter+1] = f_sinr
-                f_sinr_db = 10*np.log10(f_sinr)
+                
+                f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
+                
+                f_sinr_db = 10*torch.log10(f_sinr)
+                
+                f_stack_list[idx_data,0] = f_sinr_db.item()
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+                
+                worst_sinr_stack_list[idx_data,0] = torch.min(sinr_db_M).item()
                 
                 
                 #print(f'idx_iter={idx_iter}, '
@@ -219,8 +222,8 @@ def main(weightdir, N_iter):
                 
                 
                 # if abs(
-                #         f_sinr_stack_list[idx_data,idx_iter+1]
-                #         -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
+                #         f_stack_list[idx_data,idx_iter+1]
+                #         -f_stack_list[idx_data,idx_iter])<eps_f:
                 #     break
                 
                 Sigma = make_Sigma_opt(struct_c,struct_k,S_tilde,BQHBQ_K)
@@ -263,7 +266,17 @@ def main(weightdir, N_iter):
                 # print(f'G_M took {time_spent1:.2f} seconds, '
                 #       f'G_M2 took {time_spent2:.2f} seconds, ')
                 
+                f_sinr = sum_of_sinr_reciprocal(G_M, H_M, s)
+                
+                f_sinr_db = 10*torch.log10(f_sinr)
+                
+                f_stack_list[idx_data,0] = f_sinr_db.item()
+                
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
+                
+                worst_sinr_db = torch.min(sinr_db_M)
+                
+                worst_sinr_stack_list[idx_data,0] = worst_sinr_db.item()
                 
                 # print('w_M is updated')
                 print(f'idx_iter={idx_iter}, '
@@ -284,6 +297,18 @@ def main(weightdir, N_iter):
             
             print(f"Computation time: {time_spent_total_form}")
             print('-----------------------------------------------')
+            
+    if save_mat:
+        matfilename = "data_infer_result.mat"
+        dir_mat_save = (
+            f'mat/sred_rep_rho_mono/'
+            f'_sinr_{worst_sinr_db:.2f}dB'
+        )
+        os.makedirs(dir_mat_save, exist_ok=True)
+        save_result_mat(os.path.join(dir_mat_save, matfilename), 
+                        worst_sinr_stack_list, f_stack_list)
+    
+        
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test a model.")
@@ -295,7 +320,11 @@ if __name__ == "__main__":
     parser.add_argument("--iter", type=int,
                         help="Set the number of iteration")
     
+    parser.add_argument("--save-mat", action="store_true",
+                        help="Save mat file including worst-sinr values")
+    
+    
     args = parser.parse_args()
     
-    main(weightdir=args.weightdir, N_iter=args.iter)
+    main(weightdir=args.weightdir, N_iter=args.iter, ave_mat=args.save_mat)
     
