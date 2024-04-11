@@ -185,8 +185,9 @@ def main(weightdir, N_iter):
             # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
             # H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
             ####
-            start_time_iter = time.time()
+            
             for idx_iter in range(N_iter):
+                start_time_iter = time.time()
                 # s = modulus*torch.exp(1j *phi) 
                 
                 # we need to make new functions so that we do not need to squeeze/unsqueeze
