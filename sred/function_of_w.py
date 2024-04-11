@@ -338,6 +338,7 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
                             np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                             ] = sigma_k_squared[k] * (
                                 kron(eye(Nt), x_n2.conj().T) @ BQBQH_K[:,:,k] @ kron(eye(Nt), x_n1)
+                                )
                         # Z = torch.outer(
                         #     W_M_tilde[:, n1-rk_abs, m], W_M_tilde[:, n2-rk_abs, m].conj()
                         #     )
