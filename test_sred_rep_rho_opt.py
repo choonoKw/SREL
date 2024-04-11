@@ -185,7 +185,7 @@ def main(weightdir, N_iter):
             # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
             # H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
             ####
-            
+            start_time_total = time.time()
             for idx_iter in range(N_iter):
                 start_time_iter = time.time()
                 # s = modulus*torch.exp(1j *phi) 
@@ -280,10 +280,10 @@ def main(weightdir, N_iter):
                 formatted_time_left = format_time(time_left)
                 print(f"{formatted_time_left} left")
                 
-        time_spent_total_form = format_time(time.time() - start_time_iter)
-        
-        print(f"Computation time: {time_spent_total_form}")
-        print('-----------------------------------------------')
+            time_spent_total_form = format_time(time.time() - start_time_total)
+            
+            print(f"Computation time: {time_spent_total_form}")
+            print('-----------------------------------------------')
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Test a model.")
