@@ -225,9 +225,37 @@ def main(weightdir):
                 
                 w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
                 
-                # G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+                start_time = time.time()
+                G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+                time_spent1 = time.time() - start_time
                 
-                H_M = make_Theta_M_opt(struct_c,struct_m,W_M_tilde,AQAQH_M)
+                start_time = time.time()
+                G_M2 = make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsilon)
+                time_spent2 = time.time() - start_time
+                
+                gap = torch.max(torch.abs(G_M-G_M2))
+                mean = torch.mean(torch.abs(G_M))
+                
+                print(f'G_M, gap = {gap} with mean {mean}')
+                
+                print(f'G_M took {time_spent1} seconds, '
+                      f'G_M2 took {time_spent2} seconds, ')
+                
+                start_time = time.time()
+                H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
+                time_spent1 = time.time() - start_time
+                
+                start_time = time.time()
+                H_M2 = make_Theta_M_opt(struct_c, struct_m, W_M_tilde, AQAQH_M)
+                time_spent2 = time.time() - start_time
+                
+                gap = torch.max(torch.abs(H_M-H_M2))
+                mean = torch.mean(torch.abs(H_M))
+                
+                print(f'H_M, gap = {gap} with mean {mean}')
+                
+                print(f'H_M took {time_spent1} seconds, '
+                      f'H_M2 took {time_spent2} seconds, ')
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 
