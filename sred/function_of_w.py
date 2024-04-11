@@ -238,7 +238,7 @@ def make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon):
 
         # Upsilon
         upsilon_term = (
-            w_M[:, m].conj().unsqueeze(-1).T @ Upsilon @ w_M[:, m].unsqueeze(-1)
+            w_M[:, m].conj().unsqueeze(-1).conj().T @ Upsilon @ w_M[:, m].unsqueeze(-1)
             ) * torch.eye(Lj * Nt, dtype=torch.complex64).to(device)
         Phi_m_tilde += upsilon_term
 
@@ -311,10 +311,10 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
             Phi_temp = torch.zeros(Lj*Nt, Lj*Nt, dtype=W_M_tilde.dtype, device=device)
             rk_abs = abs(r[k])
             if r[k] > 0:
-                for n1 in range(Lj-rk_abs):  # Python range is exclusive on the upper bound
-                    x_n1 = W_M_tilde[:, rk_abs+n1, m].unsqueeze(-1);
-                    for n2 in range(Lj-rk_abs):
-                        x_n2 = W_M_tilde[:, rk_abs+n2, m].unsqueeze(-1);
+                for n1 in range(1, Lj - rk_abs + 1):  # Python range is exclusive on the upper bound
+                    x_n1 = W_M_tilde[:, rk_abs + n1 - 1, m].unsqueeze(-1);
+                    for n2 in range(1, Lj - rk_abs + 1):
+                        x_n2 = W_M_tilde[:, rk_abs + n2 - 1, m].unsqueeze(-1);
                         Phi_temp[
                             np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                             ] = sigma_k_squared[k] * (
@@ -330,10 +330,10 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
                         #                                             * torch.trace(Z @ bqbqh[:, :, q1, q2, k])
                         #                                             )
             else:  # r[k] <= 0
-                for n1 in range(rk_abs, Lj):  # Adjusted ranges for Python 0-indexing
-                    x_n1 = W_M_tilde[:, n1-rk_abs, m].unsqueeze(-1);
-                    for n2 in range(rk_abs, Lj):
-                        x_n2 = W_M_tilde[:, n2-rk_abs, m].unsqueeze(-1);
+                for n1 in range(rk_abs + 1, Lj + 1):
+                    x_n1 = W_M_tilde[:, n1 - rk_abs - 1, m].unsqueeze(-1);
+                    for n2 in range(rk_abs + 1, Lj + 1):
+                        x_n2 = W_M_tilde[:, n2 - rk_abs - 1, m].unsqueeze(-1);
                         Phi_temp[
                             np.ix_(Nt_range + Nt*(n1-1), Nt_range + Nt*(n2-1))
                             ] = sigma_k_squared[k] * (
@@ -353,7 +353,7 @@ def make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsi
 
         # Upsilon
         upsilon_term = (
-            w_M[:, m].conj().unsqueeze(-1).T @ Upsilon @ w_M[:, m].unsqueeze(-1)
+            w_M[:, m].unsqueeze(-1).conj().T @ Upsilon @ w_M[:, m].unsqueeze(-1)
             ) * torch.eye(Lj * Nt, dtype=torch.complex64).to(device)
         Phi_m_tilde += upsilon_term
 

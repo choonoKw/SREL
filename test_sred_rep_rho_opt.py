@@ -237,10 +237,10 @@ def main(weightdir):
                 gap = torch.max(torch.abs(G_M-G_M2))
                 mean = torch.mean(torch.abs(G_M))
                 
-                print(f'G_M, gap = {gap} with mean {mean}')
+                print(f'G_M, gap = {gap:.2e} with mean {mean:.2e}')
                 
-                print(f'G_M took {time_spent1} seconds, '
-                      f'G_M2 took {time_spent2} seconds, ')
+                print(f'G_M took {time_spent1:.2f} seconds, '
+                      f'G_M2 took {time_spent2:.2f} seconds, ')
                 
                 start_time = time.time()
                 H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
@@ -253,10 +253,10 @@ def main(weightdir):
                 gap = torch.max(torch.abs(H_M-H_M2))
                 mean = torch.mean(torch.abs(H_M))
                 
-                print(f'H_M, gap = {gap} with mean {mean}')
+                print(f'G_M, gap = {gap:.2e} with mean {mean:.2e}')
                 
-                print(f'H_M took {time_spent1} seconds, '
-                      f'H_M2 took {time_spent2} seconds, ')
+                print(f'G_M took {time_spent1:.2f} seconds, '
+                      f'G_M2 took {time_spent2:.2f} seconds, ')
                 
                 sinr_db_M = 10*torch.log10(sinr_values(G_M, H_M, s))
                 
