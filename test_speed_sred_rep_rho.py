@@ -27,8 +27,12 @@ from model.srel_intra_infer import SREL_intra_phase1_infer
 
 from sred.functions import sum_of_sinr_reciprocal, sinr_values, derive_s, derive_w
 
-from sred.function_of_s import make_Gamma_M, make_Psi_M, make_Sigma, make_Sigma_opt, make_Sigma_opt2
+from sred.function_of_s import make_Gamma_M,  make_Psi_M , make_Sigma
+
+from sred.function_of_s import make_Gamma_M_opt, make_Psi_M_opt, make_Sigma_opt
+
 from sred.function_of_w import make_Phi_M, make_Theta_M
+from sred.function_of_w import make_Phi_M_opt, make_Theta_M_opt
 
 
 import time
@@ -118,7 +122,8 @@ model_intra_tester.device = device
 
 # worst_sinr_stack_list, f_stack_list = test(constants,model_intra_tester,1e-7)
 
-struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon = load_param_from_setup(
+(struct_c, struct_m, struct_k, aqaqh, aqhaq, bqbqh, bqhbq, Upsilon,
+ AQAQH_M, AQHAQ_M, BQBQH_K, BQHBQ_K) = load_param_from_setup(
     'data/data_setup.mat', device)
 
 dataset = TrainingDataSet('data/data_trd_1e+02_val.mat')
@@ -158,26 +163,62 @@ with torch.no_grad():
         print(' ')
         
         ##### test
-        start_time = time.time()
-        Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
-        time_spent1 = time.time() - start_time
+        # start_time = time.time()
+        # Sigma = make_Sigma(struct_c,struct_k,S_tilde,bqhbq)
+        # time_spent1 = time.time() - start_time
         
-        start_time = time.time()
-        Sigma2 = make_Sigma_opt(struct_c, struct_k, S_tilde, bqhbq)
-        time_spent2 = time.time() - start_time
+        # start_time = time.time()
+        Sigma = make_Sigma_opt(struct_c, struct_k, S_tilde, BQHBQ_K)
+        # time_spent2 = time.time() - start_time
         
-        start_time = time.time()
-        Sigma3 = make_Sigma_opt2(struct_c,struct_k,S_tilde,bqhbq)
-        time_spent3 = time.time() - start_time
         
-        Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
+        # Gamma_M = make_Gamma_M(struct_c,struct_m,S_tilde,aqhaq)
         
-        Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+        
+        
+        Gamma_M = make_Gamma_M_opt(struct_c,struct_m,S_tilde,AQHAQ_M)        
+        
+        
+        # Psi_M = make_Psi_M(struct_c,struct_m,S_tilde,aqhaq,Sigma,Upsilon)
+        
+        
+        
+        Psi_M = make_Psi_M_opt(struct_c,struct_m,S_tilde,AQHAQ_M,Sigma,Upsilon)
+        
         
         w_M, W_M_tilde = derive_w(struct_c ,Psi_M, Gamma_M, device)
         
+        start_time = time.time()
         G_M = make_Phi_M(struct_c,struct_m,struct_k,w_M,W_M_tilde,aqaqh,bqbqh,Upsilon)
+        time_spent1 = time.time() - start_time
+        
+        start_time = time.time()
+        G_M2 = make_Phi_M_opt(struct_c,struct_m,struct_k,w_M,W_M_tilde,AQAQH_M,BQBQH_K,Upsilon)
+        time_spent2 = time.time() - start_time
+        
+        gap = torch.max(torch.abs(G_M-G_M2))
+        mean = torch.mean(torch.abs(G_M))
+        
+        print(f'G_M, gap = {gap:.2e} with mean {mean:.2e}')
+        
+        print(f'G_M took {time_spent1:.2f} seconds, '
+              f'G_M2 took {time_spent2:.2f} seconds, ')
+        
+        start_time = time.time()
         H_M = make_Theta_M(struct_c,struct_m,W_M_tilde,aqaqh)
+        time_spent1 = time.time() - start_time
+        
+        start_time = time.time()
+        H_M2 = make_Theta_M_opt(struct_c, struct_m, W_M_tilde, AQAQH_M)
+        time_spent2 = time.time() - start_time
+        
+        gap = torch.max(torch.abs(H_M-H_M2))
+        mean = torch.mean(torch.abs(H_M))
+        
+        print('H_M, gap = {gap} with mean {mean}')
+        
+        print(f'H_M took {time_spent1} seconds, '
+              f'H_M2 took {time_spent2} seconds, ')
         ####
         start_time_epoch = time.time()
         for idx_iter in range(N_iter):
@@ -211,10 +252,10 @@ with torch.no_grad():
             print(' ')
             
             
-            if abs(
-                    f_sinr_stack_list[idx_data,idx_iter+1]
-                    -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
-                break
+            # if abs(
+            #         f_sinr_stack_list[idx_data,idx_iter+1]
+            #         -f_sinr_stack_list[idx_data,idx_iter])<eps_f:
+            #     break
             
             Sigma = make_Sigma_opt(struct_c,struct_k,S_tilde,bqhbq)
             
