@@ -54,7 +54,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -76,7 +76,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     # Load the bundled dictionary
     dir_dict_saved = (
         'weights/intra_phase1/rep_rho/'
-        '20240402-195644_Nstep10_batch07_sinr_15.58dB')
+        '20240403-132816_Nstep10_batch02_sinr_15.47dB')
         # '20240402-164425_Nstep10_batch02_sinr_13.17dB')
     loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
                              map_location=device)
@@ -97,7 +97,7 @@ def main(save_weights, save_logs, save_mat, batch_size, lambda_eta):
     # Initialize model
     model_intra_phase2 = SREL_rep_etaL(constants, model_intra_phase1)
     
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     learning_rate=1e-5
     
@@ -330,25 +330,23 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-9)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-9)
 
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-7)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-7)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-5)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-3)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-3)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-1)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-1)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e1)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e3)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e3)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e5)
-    
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e7)
-    
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e9)
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e5)
     
 
 

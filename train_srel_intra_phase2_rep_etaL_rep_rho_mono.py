@@ -23,7 +23,7 @@ from utils.load_scalars_from_setup import load_scalars_from_setup
 # print('SRED_rho with Drop Out (DO)')
 
 from model.srel_intra_phase1 import SREL_intra_phase1_rep_rho
-from model.srel_intra_phase2 import SREL_rep_eta
+from model.srel_intra_phase2 import SREL_rep_etaL
 from model.srel_intra_tester import SREL_intra_phase2_tester
 # print('SRED_rho with Batch Normalization (BN)')
 
@@ -50,7 +50,7 @@ from utils.format_time import format_time
 
 # import torch.nn as nn
 
-def main(save_weights, save_logs, save_mat, lambda_eta,weightdir):
+def main(save_weights, save_logs, save_mat, batch_size, lambda_eta, lambda_mono):
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
@@ -68,23 +68,18 @@ def main(save_weights, save_logs, save_mat, lambda_eta,weightdir):
     # Check for GPU availability.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if device.type == 'cuda':
-        torch.cuda.set_device(1)
+        torch.cuda.set_device(0)
     
     ###############################################################
     ## Load weight
     ###############################################################
     # Load the bundled dictionary
-    if weightdir:
-        dir_dict_saved = weightdir
-        loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
-                                 map_location=device)
-    else:
-        dir_dict_saved = (
-            'weights/intra_phase1/rep_rho/'
-            '20240403-132816_Nstep10_batch02_sinr_15.47dB')
-        loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
-                                 map_location=device)
-        
+    dir_dict_saved = (
+        'weights/intra_phase1/rep_rho/'
+        '20240403-132816_Nstep10_batch02_sinr_15.47dB')
+        # '20240402-164425_Nstep10_batch02_sinr_13.17dB')
+    loaded_dict = torch.load(os.path.join(dir_dict_saved,'model_with_attrs.pth'), 
+                             map_location=device)
     N_step = loaded_dict['N_step']
     ###############################################################
     ## Control Panel
@@ -100,24 +95,25 @@ def main(save_weights, save_logs, save_mat, lambda_eta,weightdir):
         param.requires_grad = False
         
     # Initialize model
-    model_intra_phase2 = SREL_rep_eta(constants, model_intra_phase1)
+    model_intra_phase2 = SREL_rep_etaL(constants, model_intra_phase1)
     
     num_epochs = 10
     # Initialize the optimizer
-    batch_size=5
     learning_rate=1e-5
-    print(f'learning_rate={learning_rate:.0e}')
+    
     optimizer = optim.Adam(model_intra_phase2.parameters(), lr=learning_rate)
     
     # loss setting
-    lambda_sinr = 1e-1
-    lambda_mono = 1e-2
+    lambda_sinr = 1e-2
     # lambda_eta = 1e-5
     hyperparameters = {
         'lambda_sinr': lambda_sinr,
         'lambda_mono': lambda_mono,
         'lambda_eta': lambda_eta
     }    
+    
+    print(f'learning_rate={learning_rate:.0e}, '
+          f'lambda_eta={lambda_eta:.0e}')
     ###############################################################
     model_intra_phase2.to(device)
     model_intra_phase2.device = device
@@ -333,25 +329,25 @@ if __name__ == "__main__":
     parser.add_argument("--save-mat", action="store_true",
                         help="Save mat file including worst-sinr values")
     
-    parser.add_argument("--weightdir", type=str, 
-                        help="Save the model weights after training")
-    
     args = parser.parse_args()
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #      weightdir=args.weightdir, lambda_eta=1e-9)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-9)
 
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-         weightdir=args.weightdir, lambda_eta=1e-7)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-7)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #      weightdir=args.weightdir, lambda_eta=1e-5)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-5)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #      weightdir=args.weightdir, lambda_eta=1e-3)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-3)
     
-    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-    #      weightdir=args.weightdir, lambda_eta=1e-1)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e-1)
+    
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=2, lambda_eta=1e1)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e3)
+    
+    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, batch_size=5, lambda_eta=1e5)
     
 
 
