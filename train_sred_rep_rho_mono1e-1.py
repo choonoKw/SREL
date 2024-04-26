@@ -52,7 +52,7 @@ def main(save_weights, save_logs, save_mat,
     # Load dataset
     constants = load_scalars_from_setup('data/data_setup.mat')
     # y_M, Ly = load_mapVector('data/data_mapV.mat')
-    data_num = 1e2
+    data_num = 1e1
     
     
     # loading constant
@@ -75,7 +75,7 @@ def main(save_weights, save_logs, save_mat,
     constants['N_step'] = N_step
     model_intra_phase1 = SRED_rep_rho(constants)
 #    model_intra_phase1.apply(init_weights)
-    num_epochs = 50
+    num_epochs = 10
     # Initialize the optimizer
     # learning_rate=1e-5
     # print(f'learning_rate={learning_rate:.0e}')
@@ -267,7 +267,7 @@ def main(save_weights, save_logs, save_mat,
         with open(file_name, 'a') as file:
             file.write(formatted_string + '\n') 
     
-    # plot_losses(training_losses, validation_losses)
+    plot_losses(training_losses, validation_losses)
     
     # validation
     worst_sinr_stack_list, f_stack_list = validation(constants,model_intra_tester)
@@ -319,8 +319,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e0)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e0)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
     #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-1)
@@ -331,8 +331,8 @@ if __name__ == "__main__":
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
     #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-3)
     
-    main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
-        batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-4)
+    # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
+    #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-4)
     
     # main(save_weights=args.save_weights, save_logs=args.save_logs,save_mat=args.save_mat, 
     #     batch_size=5, learning_rate=1e-5, lambda_sinr = 1e-1, lambda_mono=1e-5)
